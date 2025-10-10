@@ -1,4 +1,4 @@
-use crate::traits::Empty;
+use types::traits::Empty;
 
 pub trait LeafPreimage {
     fn get_key(self) -> Field;
