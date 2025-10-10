@@ -21,8 +21,8 @@ jobs:
 
       - name: Install bb
         run: |
-          npm install -g bbup
-          bbup -nv 1.0.0-beta.12
+          curl -L https://raw.githubusercontent.com/AztecProtocol/aztec-packages/refs/heads/next/barretenberg/bbup/install | bash
+          ~/.bb/bbup -nv 1.0.0-beta.12
           sudo apt install libc++-dev
 
       - name: Build Noir benchmark programs
