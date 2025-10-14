@@ -82,6 +82,7 @@ where
 }
 
 mod tests {
+    use std::hash::pedersen_hash;
     use types::{
         merkle_tree::{
             leaf_preimage::{IndexedTreeLeafPreimage, LeafPreimage},
@@ -93,7 +94,6 @@ mod tests {
         tests::merkle_tree_utils::NonEmptyMerkleTree,
     };
     use types::traits::Empty;
-    use std::hash::pedersen_hash;
 
     struct TestLeafPreimage {
         value: Field,
