@@ -63,6 +63,7 @@ impl<let N: u32> MerkleTree<N> {
     }
 }
 
+#[export]
 pub fn sibling_index(index: u32) -> u32 {
     if index % 2 == 0 {
         index + 1
