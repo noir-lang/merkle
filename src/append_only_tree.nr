@@ -1,7 +1,6 @@
-use types::{
-    abis::append_only_tree_snapshot::AppendOnlyTreeSnapshot,
-    merkle_tree::{membership::assert_check_membership, root::root_from_sibling_path},
-};
+use types::abis::append_only_tree_snapshot::AppendOnlyTreeSnapshot;
+use crate::membership::assert_check_membership;
+use crate::root::root_from_sibling_path;
 
 pub fn insert_subtree_to_snapshot_tree<let N: u32>(
     snapshot: AppendOnlyTreeSnapshot,

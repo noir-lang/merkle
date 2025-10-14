@@ -1,4 +1,5 @@
-use types::{hash::merkle_hash, merkle_tree::merkle_tree::MerkleTree};
+use types::hash::merkle_hash;
+use crate::merkle_tree::MerkleTree;
 
 // Calculate the Merkle tree root from the sibling path and leaf.
 //

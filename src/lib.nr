@@ -6,7 +6,7 @@ pub mod merkle_tree;
 pub mod root;
 pub mod unbalanced_merkle_tree;
 
-/**
+
 pub use leaf_preimage::{IndexedTreeLeafPreimage, LeafPreimage};
 pub use membership::{
     assert_check_membership, assert_check_non_membership, check_membership,
@@ -15,4 +15,4 @@ pub use membership::{
 pub use merkle_tree::MerkleTree;
 pub use root::{calculate_empty_tree_root, calculate_subtree_root, root_from_sibling_path};
 pub use unbalanced_merkle_tree::UnbalancedMerkleTree;
-**/
+

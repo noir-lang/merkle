@@ -1,10 +1,8 @@
-use types::{
-    merkle_tree::{
-        indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf,
-        leaf_preimage::IndexedTreeLeafPreimage, root::root_from_sibling_path,
-    },
-    traits::Empty,
-};
+use types::traits::Empty;
+
+use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
+use crate::leaf_preimage::IndexedTreeLeafPreimage;
+use crate::root::root_from_sibling_path;
 
 #[derive(Eq)]
 pub struct MembershipWitness<let N: u32> {

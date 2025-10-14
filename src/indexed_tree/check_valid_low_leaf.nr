@@ -1,4 +1,4 @@
-use types::merkle_tree::leaf_preimage::IndexedTreeLeafPreimage;
+use crate::leaf_preimage::IndexedTreeLeafPreimage;
 
 pub fn assert_check_valid_low_leaf<LEAF_PREIMAGE, VALUE>(
     key: Field,
