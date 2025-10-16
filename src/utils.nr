@@ -15,3 +15,11 @@ where
         seen_value[index] = true;
     }
 }
+
+fn poseidon2_hash<let N: u32>(inputs: [Field; N]) -> Field {
+    poseidon::poseidon2::Poseidon2::hash(inputs, N)
+}
+
+pub fn merkle_hash(left: Field, right: Field) -> Field {
+    poseidon2_hash([left, right])
+}

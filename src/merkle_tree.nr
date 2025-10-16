@@ -1,4 +1,5 @@
-use types::hash::{accumulate_sha256, merkle_hash};
+use types::hash::accumulate_sha256;
+use crate::utils::merkle_hash;
 
 #[derive(Eq)]
 pub struct MerkleTree<let N: u32> {

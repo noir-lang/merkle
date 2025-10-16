@@ -3,9 +3,8 @@ pub mod check_valid_low_leaf;
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, calculate_subtree_root, root_from_sibling_path};
-use types::{
-    abis::append_only_tree_snapshot::AppendOnlyTreeSnapshot, utils::arrays::check_permutation,
-};
+use crate::utils::check_permutation;
+use types::abis::append_only_tree_snapshot::AppendOnlyTreeSnapshot;
 
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32>(
     start_snapshot: AppendOnlyTreeSnapshot,
