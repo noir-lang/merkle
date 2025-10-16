@@ -1,4 +1,4 @@
-use types::hash::accumulate_sha256;
+use crate::utils::accumulate_sha256;
 
 pub struct UnbalancedMerkleTree {
     pub root: Field,
