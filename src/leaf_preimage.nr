@@ -1,11 +1,9 @@
-use types::traits::Empty;
-
 pub trait LeafPreimage {
     fn get_key(self) -> Field;
     fn as_leaf(self) -> Field;
 }
 
-pub trait IndexedTreeLeafPreimage<Value>: Empty + LeafPreimage {
+pub trait IndexedTreeLeafPreimage<Value>: LeafPreimage + Eq {
     fn get_next_key(self) -> Field;
 
     fn points_to_infinity(self) -> bool;
@@ -15,14 +13,26 @@ pub trait IndexedTreeLeafPreimage<Value>: Empty + LeafPreimage {
     fn update_value(self, value: Value) -> Self;
 
     fn build_insertion_leaf(value: Value, low_leaf: Self) -> Self;
+
+    fn is_empty(self) -> bool;
+
+    fn empty() -> Self;
 }
 
-pub trait IndexedTreeLeafValue: Empty {
+pub trait IndexedTreeLeafValue: Eq {
     fn get_key(self) -> Field;
+    fn is_empty(self) -> bool;
+    fn empty() -> Self;
 }
 
 impl IndexedTreeLeafValue for Field {
     fn get_key(self) -> Field {
         self
+    }
+    fn is_empty(self) -> bool {
+        self == 0
+    }
+    fn empty() -> Self {
+        0
     }
 }

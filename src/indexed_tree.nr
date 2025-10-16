@@ -4,8 +4,7 @@ use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, calculate_subtree_root, root_from_sibling_path};
 use types::{
-    abis::append_only_tree_snapshot::AppendOnlyTreeSnapshot, traits::Empty,
-    utils::arrays::check_permutation,
+    abis::append_only_tree_snapshot::AppendOnlyTreeSnapshot, utils::arrays::check_permutation,
 };
 
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32>(
@@ -28,7 +27,7 @@ where
 
     // Now, update the existing leaves with the new leaves
     let mut current_tree_root = start_snapshot.root;
-    let mut insertion_subtree = [Empty::empty(); SubtreeWidth];
+    let mut insertion_subtree = [Leaf::empty(); SubtreeWidth];
     let start_insertion_index = start_snapshot.next_available_leaf_index;
 
     for i in 0..sorted_values.len() {
@@ -78,7 +77,7 @@ where
             );
 
             insertion_subtree[value_index] = if is_update {
-                Empty::empty()
+                Leaf::empty()
             } else {
                 Leaf::build_insertion_leaf(value, low_leaf_preimage)
             };

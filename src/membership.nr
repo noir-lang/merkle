@@ -1,5 +1,3 @@
-use types::traits::Empty;
-
 use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
 use crate::leaf_preimage::IndexedTreeLeafPreimage;
 use crate::root::root_from_sibling_path;
@@ -8,12 +6,6 @@ use crate::root::root_from_sibling_path;
 pub struct MembershipWitness<let N: u32> {
     pub leaf_index: Field,
     pub sibling_path: [Field; N],
-}
-
-impl<let N: u32> Empty for MembershipWitness<N> {
-    fn empty() -> Self {
-        MembershipWitness { leaf_index: 0, sibling_path: [0; N] }
-    }
 }
 
 pub fn check_membership<let N: u32>(
@@ -83,27 +75,19 @@ where
 
 mod tests {
     use std::hash::pedersen_hash;
-    use types::{
-        merkle_tree::{
-            leaf_preimage::{IndexedTreeLeafPreimage, LeafPreimage},
-            membership::{
-                assert_check_membership, assert_check_non_membership, check_membership,
-                conditionally_assert_check_membership, MembershipWitness,
-            },
+    use types::tests::merkle_tree_utils::NonEmptyMerkleTree;
+
+    use crate::{
+        leaf_preimage::{IndexedTreeLeafPreimage, LeafPreimage},
+        membership::{
+            assert_check_membership, assert_check_non_membership, check_membership,
+            conditionally_assert_check_membership, MembershipWitness,
         },
-        tests::merkle_tree_utils::NonEmptyMerkleTree,
     };
-    use types::traits::Empty;
 
     struct TestLeafPreimage {
         value: Field,
         next_value: Field,
-    }
-
-    impl Empty for TestLeafPreimage {
-        fn empty() -> Self {
-            TestLeafPreimage { value: 0, next_value: 0 }
-        }
     }
 
     impl LeafPreimage for TestLeafPreimage {
@@ -141,6 +125,14 @@ mod tests {
 
         fn build_insertion_leaf(value: Field, low_leaf: Self) -> Self {
             Self { value, next_value: low_leaf.next_value }
+        }
+
+        fn is_empty(self) -> bool {
+            (self.value == 0) & (self.next_value == 0)
+        }
+
+        fn empty() -> Self {
+            Self { value: 0, next_value: 0 }
         }
     }
 
