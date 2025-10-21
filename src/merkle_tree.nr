@@ -73,7 +73,7 @@ pub fn sibling_index(index: u32) -> u32 {
 }
 
 // Note: `N` must be a power of 2.
-pub fn compute_merkle_tree_nodes<let N: u32>(
+fn compute_merkle_tree_nodes<let N: u32>(
     leaves: [Field; N],
     hasher: fn(Field, Field) -> Field,
 ) -> [Field; N - 1] {
