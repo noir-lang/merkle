@@ -1,8 +1,8 @@
-use crate::root::root_from_sibling_path;
-use crate::merkle_tree::MerkleTree;
 use crate::membership::check_membership;
-use crate::unbalanced_merkle_tree::UnbalancedMerkleTree;
+use crate::merkle_tree::MerkleTree;
+use crate::root::root_from_sibling_path;
 use crate::unbalanced_merkle_tree::compute_unbalanced_merkle_root;
+use crate::unbalanced_merkle_tree::UnbalancedMerkleTree;
 use types::hash::accumulate_sha256;
 
 // new Merkle tree
