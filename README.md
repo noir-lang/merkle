@@ -86,7 +86,6 @@ let root = tree.get_root();
 #### Utility Functions
 - `sibling_index(index)` - Get sibling index
 - `compute_root_from_sibling_path(leaf, index, path)` - Reconstruct root from proof
-- `calculate_subtree_root(leaves)` - Calculate subtree root
 - `calculate_empty_tree_root(depth)` - Get empty tree root
 
 ## Advanced Usage

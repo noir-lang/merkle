@@ -17,8 +17,7 @@ pub use membership::{
     conditionally_assert_check_membership, MembershipWitness,
 };
 pub use merkle_tree::MerkleTree;
-pub use merkle_tree::sibling_index;
-pub use root::{calculate_empty_tree_root, calculate_subtree_root, compute_root_from_sibling_path};
+pub use root::{calculate_empty_tree_root, compute_root_from_sibling_path};
 pub use unbalanced_merkle_tree::UnbalancedMerkleTree;
 pub use utils::{
     accumulate_sha256, create_and_verify_membership, create_membership_witness,
