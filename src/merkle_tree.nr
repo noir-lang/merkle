@@ -3,6 +3,7 @@ use crate::utils::{accumulate_sha256, merkle_hash};
 #[derive(Eq)]
 pub struct MerkleTree<let N: u32> {
     pub leaves: [Field; N],
+    // nodes are the internal nodes of the Merkle tree, excluding the leaves
     pub nodes: [Field; N - 1],
 }
 
