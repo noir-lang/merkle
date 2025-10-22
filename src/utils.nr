@@ -1,3 +1,6 @@
+use crate::membership::{check_membership, MembershipWitness};
+use crate::merkle_tree::MerkleTree;
+
 pub fn check_permutation<T, let N: u32>(
     original_array: [T; N],
     permuted_array: [T; N],
@@ -64,12 +67,7 @@ pub fn field_from_bytes_32_trunc(bytes32: [u8; 32]) -> Field {
     low + high * v
 }
 
-// Merkle tree helper functions for common operations
-use crate::merkle_tree::MerkleTree;
-use crate::membership::{check_membership, MembershipWitness};
-use crate::root::root_from_sibling_path;
-
-/// Create a Merkle tree and return both the tree and its root
+/// Create a poseidon2 Merkle tree and return both the tree and its root
 pub fn create_tree_with_root<let N: u32>(leaves: [Field; N]) -> (MerkleTree<N>, Field) {
     let tree = MerkleTree::new(leaves);
     let root = tree.get_root();
@@ -89,10 +87,7 @@ pub fn create_membership_witness<let N: u32, let K: u32>(
     leaf_index: u32,
 ) -> MembershipWitness<K> {
     let sibling_path = tree.get_sibling_path::<K>(leaf_index);
-    MembershipWitness {
-        leaf_index: leaf_index as Field,
-        sibling_path,
-    }
+    MembershipWitness { leaf_index: leaf_index as Field, sibling_path }
 }
 
 /// Verify a leaf exists in a tree using a membership witness
@@ -113,13 +108,4 @@ pub fn create_and_verify_membership<let N: u32, let K: u32>(
     let witness = create_membership_witness::<N, K>(tree, leaf_index);
     let leaf_value = leaves[leaf_index];
     verify_membership(leaf_value, witness, root)
-}
-
-/// Reconstruct a tree root from a leaf and its membership proof
-pub fn reconstruct_root<let K: u32>(
-    leaf: Field,
-    leaf_index: Field,
-    sibling_path: [Field; K],
-) -> Field {
-    root_from_sibling_path(leaf, leaf_index, sibling_path)
 }

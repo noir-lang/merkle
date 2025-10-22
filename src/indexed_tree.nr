@@ -2,7 +2,9 @@ pub mod check_valid_low_leaf;
 
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
-use crate::root::{calculate_empty_tree_root, calculate_subtree_root, root_from_sibling_path};
+use crate::root::{
+    calculate_empty_tree_root, calculate_subtree_root, compute_root_from_sibling_path,
+};
 use crate::utils::check_permutation;
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32>(
     start_root: Field,
@@ -68,7 +70,7 @@ where
                 )
             };
 
-            current_tree_root = root_from_sibling_path(
+            current_tree_root = compute_root_from_sibling_path(
                 updated_low_leaf.as_leaf(),
                 witness.leaf_index,
                 witness.sibling_path,
@@ -98,7 +100,7 @@ where
     // Calculate the new root
     // We are inserting a subtree rather than a full tree here
     let subtree_index = (start_insertion_index >> (SubtreeHeight as u64)) as u32;
-    let new_root = root_from_sibling_path(
+    let new_root = compute_root_from_sibling_path(
         subtree_root,
         subtree_index as Field,
         new_subtree_sibling_path,
@@ -149,7 +151,7 @@ where
     };
 
     // Update low leaf
-    current_root = root_from_sibling_path(
+    current_root = compute_root_from_sibling_path(
         updated_low_leaf.as_leaf(),
         low_leaf_membership_witness.leaf_index,
         low_leaf_membership_witness.sibling_path,
@@ -168,7 +170,7 @@ where
         );
 
         // Calculate the new root
-        current_root = root_from_sibling_path(
+        current_root = compute_root_from_sibling_path(
             insertion_leaf.as_leaf(),
             next_available_leaf_index as Field,
             insertion_sibling_path,

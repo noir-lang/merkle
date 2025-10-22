@@ -1,5 +1,5 @@
 use crate::membership::assert_check_membership;
-use crate::root::root_from_sibling_path;
+use crate::root::compute_root_from_sibling_path;
 pub fn insert_subtree_to_snapshot_tree<let N: u32>(
     current_root: Field,
     next_available_leaf_index: u64,
@@ -21,7 +21,7 @@ pub fn insert_subtree_to_snapshot_tree<let N: u32>(
     );
 
     // if index of leaf is x, index of its parent is x/2 or x >> 1. We need to find the parent `subtree_depth` levels up.
-    let new_root = root_from_sibling_path(
+    let new_root = compute_root_from_sibling_path(
         subtree_root_to_insert,
         leaf_index_at_depth as Field,
         sibling_path,

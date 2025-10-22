@@ -11,7 +11,7 @@ use crate::utils::merkle_hash;
 // TODO: I'd generally like to avoid u256 for algorithms like
 // this because it means we never even need to consider cases where
 // the index is greater than p.
-pub fn root_from_sibling_path<let N: u32>(
+pub fn compute_root_from_sibling_path<let N: u32>(
     leaf: Field,
     leaf_index: Field,
     sibling_path: [Field; N],

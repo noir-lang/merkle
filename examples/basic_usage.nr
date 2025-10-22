@@ -3,8 +3,8 @@
 use merkle::{
     MerkleTree, UnbalancedMerkleTree, check_membership, assert_check_membership,
     create_tree_with_root, create_sha_tree_with_root, create_membership_witness,
-    verify_membership, create_and_verify_membership, reconstruct_root,
-    MembershipWitness, sibling_index, root_from_sibling_path
+    verify_membership, create_and_verify_membership,
+    MembershipWitness, sibling_index, compute_root_from_sibling_path
 };
 
 fn main() {
@@ -42,7 +42,7 @@ fn main() {
     let leaf = 15;
     let leaf_index = 2;
     let path = [20, 10]; // sibling path
-    let reconstructed_root = reconstruct_root(leaf, leaf_index, path);
+    let reconstructed_root = compute_root_from_sibling_path(leaf, leaf_index, path);
     
     // Example 7: Utility functions
     let sibling_idx = sibling_index(1); // Should be 0
