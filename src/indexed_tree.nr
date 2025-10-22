@@ -2,9 +2,7 @@ pub mod check_valid_low_leaf;
 
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
-use crate::root::{
-    calculate_empty_tree_root, compute_root_from_sibling_path,
-};
+use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
 use crate::utils::{check_permutation, create_tree_with_root};
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32>(
     start_root: Field,
@@ -95,7 +93,8 @@ where
     );
 
     // Create new subtree to insert into the whole indexed tree
-    let (_, subtree_root) = create_tree_with_root(insertion_subtree.map(|leaf: Leaf| leaf.as_leaf()));
+    let (_, subtree_root) =
+        create_tree_with_root(insertion_subtree.map(|leaf: Leaf| leaf.as_leaf()));
 
     // Calculate the new root
     // We are inserting a subtree rather than a full tree here
