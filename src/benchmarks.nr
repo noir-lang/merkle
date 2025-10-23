@@ -30,7 +30,8 @@ fn benchmark_unbalanced_merkle_tree_new(leaves: [Field; 16], num_non_empty_leave
 // Unbalanced root computation
 #[export]
 fn benchmark_compute_unbalanced_merkle_root(leaves: [Field; 16], num_non_empty_leaves: u32) {
-    let _ = compute_unbalanced_merkle_root::<16, 4>(leaves, num_non_empty_leaves, accumulate_sha256);
+    let _ =
+        compute_unbalanced_merkle_root::<16, 4>(leaves, num_non_empty_leaves, accumulate_sha256);
 }
 
 #[export]
