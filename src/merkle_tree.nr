@@ -1,4 +1,4 @@
-use types::{hash::{accumulate_sha256, merkle_hash}, traits::Empty};
+use crate::utils::{accumulate_sha256, merkle_hash};
 
 #[derive(Eq)]
 pub struct MerkleTree<let N: u32> {
@@ -6,13 +6,11 @@ pub struct MerkleTree<let N: u32> {
     pub nodes: [Field; N - 1],
 }
 
-impl<let N: u32> Empty for MerkleTree<N> {
-    fn empty() -> Self {
+impl<let N: u32> MerkleTree<N> {
+    pub fn empty() -> Self {
         MerkleTree { leaves: [0; N], nodes: [0; N - 1] }
     }
-}
 
-impl<let N: u32> MerkleTree<N> {
     pub fn new(leaves: [Field; N]) -> Self {
         let nodes = compute_merkle_tree_nodes(leaves, merkle_hash);
         MerkleTree { leaves, nodes }

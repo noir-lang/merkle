@@ -6,6 +6,7 @@ pub mod merkle_tree;
 pub mod root;
 pub mod unbalanced_merkle_tree;
 mod benchmarks;
+mod utils;
 
 pub use leaf_preimage::{IndexedTreeLeafPreimage, LeafPreimage};
 pub use membership::{
