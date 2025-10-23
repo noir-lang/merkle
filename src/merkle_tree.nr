@@ -17,7 +17,7 @@ impl<let N: u32> MerkleTree<N> {
         MerkleTree { leaves, nodes }
     }
 
-    // Convenience methods for common hash functions
+    // implement for common hash functions
     pub fn new_poseidon(leaves: [Field; N]) -> Self {
         Self::new(leaves, poseidon2_hash)
     }

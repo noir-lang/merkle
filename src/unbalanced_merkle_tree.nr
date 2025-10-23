@@ -19,7 +19,6 @@ impl UnbalancedMerkleTree {
         UnbalancedMerkleTree { root }
     }
 
-    // Convenience method for SHA256
     pub fn new_sha256<let N: u32, let MAX_SUBTREES: u32>(
         leaves: [Field; N],
         num_non_empty_leaves: u32,
