@@ -15,22 +15,15 @@ where
 }
 
 mod tests {
-    use types::merkle_tree::{
+    use crate::{
         indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf,
         leaf_preimage::IndexedTreeLeafPreimage,
     };
-    use types::merkle_tree::leaf_preimage::LeafPreimage;
-    use types::traits::Empty;
+    use crate::leaf_preimage::LeafPreimage;
 
     struct TestLeafPreimage {
         value: Field,
         next_value: Field,
-    }
-
-    impl Empty for TestLeafPreimage {
-        fn empty() -> Self {
-            Self { value: 0, next_value: 0 }
-        }
     }
 
     impl Eq for TestLeafPreimage {
@@ -67,6 +60,14 @@ mod tests {
         }
         fn build_insertion_leaf(value: Field, low_leaf: Self) -> Self {
             Self { value, next_value: low_leaf.next_value }
+        }
+
+        fn is_empty(self) -> bool {
+            (self.value == 0) & (self.next_value == 0)
+        }
+
+        fn empty() -> Self {
+            Self { value: 0, next_value: 0 }
         }
     }
 
