@@ -1,4 +1,4 @@
-use crate::utils::{create_tree_with_root, merkle_hash};
+use crate::utils::{create_tree_with_root, poseidon2_hash};
 
 // Calculate the Merkle tree root from the sibling path and leaf.
 //
@@ -14,6 +14,7 @@ pub fn compute_root_from_sibling_path<let N: u32>(
     leaf: Field,
     leaf_index: Field,
     sibling_path: [Field; N],
+    hasher: fn(Field, Field) -> Field,
 ) -> Field {
     let mut node = leaf;
     let indices: [u1; N] = leaf_index.to_le_bits();
@@ -24,7 +25,7 @@ pub fn compute_root_from_sibling_path<let N: u32>(
         } else {
             (node, sibling_path[i])
         };
-        node = merkle_hash(hash_left, hash_right);
+        node = hasher(hash_left, hash_right);
     }
     node
 }
@@ -67,10 +68,13 @@ fn test_merkle_root_interop_test() {
     // This is a test to ensure that we match the cpp implementation.
     // You can grep for `TEST_F(root_rollup_tests, noir_interop_test)`
     // to find the test that matches this.
-    let (_, root) = create_tree_with_root([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+    let (_, root) = create_tree_with_root(
+        [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
+        poseidon2_hash,
+    );
     assert(0x1a09d935ae110b4c861fcec8f9099ec30b4485022aeb3d3cf9d7168e38fdc231 == root);
 
-    let (_, empty_root) = create_tree_with_root([0; 16]);
+    let (_, empty_root) = create_tree_with_root([0; 16], poseidon2_hash);
     assert(0x2373ea368857ec7af97e7b470d705848e2bf93ed7bef142a490f2119bcf82d8e == empty_root);
 }
 
@@ -78,33 +82,33 @@ fn test_merkle_root_interop_test() {
 fn test_empty_subroot() {
     assert(calculate_empty_tree_root(0) == 0);
 
-    let (_, expected_empty_root_2) = create_tree_with_root([0; 2]);
+    let (_, expected_empty_root_2) = create_tree_with_root([0; 2], poseidon2_hash);
     assert(calculate_empty_tree_root(1) == expected_empty_root_2);
 
-    let (_, expected_empty_root_4) = create_tree_with_root([0; 4]);
+    let (_, expected_empty_root_4) = create_tree_with_root([0; 4], poseidon2_hash);
     assert(calculate_empty_tree_root(2) == expected_empty_root_4);
 
-    let (_, expected_empty_root_8) = create_tree_with_root([0; 8]);
+    let (_, expected_empty_root_8) = create_tree_with_root([0; 8], poseidon2_hash);
     assert(calculate_empty_tree_root(3) == expected_empty_root_8);
 
-    let (_, expected_empty_root_16) = create_tree_with_root([0; 16]);
+    let (_, expected_empty_root_16) = create_tree_with_root([0; 16], poseidon2_hash);
     assert(calculate_empty_tree_root(4) == expected_empty_root_16);
 
-    let (_, expected_empty_root_32) = create_tree_with_root([0; 32]);
+    let (_, expected_empty_root_32) = create_tree_with_root([0; 32], poseidon2_hash);
     assert(calculate_empty_tree_root(5) == expected_empty_root_32);
 
-    let (_, expected_empty_root_64) = create_tree_with_root([0; 64]);
+    let (_, expected_empty_root_64) = create_tree_with_root([0; 64], poseidon2_hash);
     assert(calculate_empty_tree_root(6) == expected_empty_root_64);
 
-    let (_, expected_empty_root_128) = create_tree_with_root([0; 128]);
+    let (_, expected_empty_root_128) = create_tree_with_root([0; 128], poseidon2_hash);
     assert(calculate_empty_tree_root(7) == expected_empty_root_128);
 
-    let (_, expected_empty_root_256) = create_tree_with_root([0; 256]);
+    let (_, expected_empty_root_256) = create_tree_with_root([0; 256], poseidon2_hash);
     assert(calculate_empty_tree_root(8) == expected_empty_root_256);
 
-    let (_, expected_empty_root_512) = create_tree_with_root([0; 512]);
+    let (_, expected_empty_root_512) = create_tree_with_root([0; 512], poseidon2_hash);
     assert(calculate_empty_tree_root(9) == expected_empty_root_512);
 
-    let (_, expected_empty_root_1024) = create_tree_with_root([0; 1024]);
+    let (_, expected_empty_root_1024) = create_tree_with_root([0; 1024], poseidon2_hash);
     assert(calculate_empty_tree_root(10) == expected_empty_root_1024);
 }

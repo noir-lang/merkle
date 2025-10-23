@@ -21,5 +21,6 @@ pub use root::{calculate_empty_tree_root, compute_root_from_sibling_path};
 pub use unbalanced_merkle_tree::UnbalancedMerkleTree;
 pub use utils::{
     accumulate_sha256, create_and_verify_membership, create_membership_witness,
-    create_sha_tree_with_root, create_tree_with_root, merkle_hash, verify_membership,
+    create_poseidon_tree_with_root, create_sha256_tree_with_root, create_tree_with_root,
+    poseidon2_hash, verify_membership,
 };

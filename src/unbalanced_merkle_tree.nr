@@ -9,16 +9,22 @@ pub struct UnbalancedMerkleTree {
 /// Since we cannot isolate branches, it cost more gates than using MerkleTree on the full array of elements `N`,
 /// but it may be cheaper onchain when proving the membership of a leaf.
 impl UnbalancedMerkleTree {
-    pub fn new_sha<let N: u32, let MAX_SUBTREES: u32>(
+    pub fn new<let N: u32, let MAX_SUBTREES: u32>(
+        leaves: [Field; N],
+        num_non_empty_leaves: u32,
+        hasher: fn(Field, Field) -> Field,
+    ) -> Self {
+        let root =
+            compute_unbalanced_merkle_root::<N, MAX_SUBTREES>(leaves, num_non_empty_leaves, hasher);
+        UnbalancedMerkleTree { root }
+    }
+
+    // Convenience method for SHA256
+    pub fn new_sha256<let N: u32, let MAX_SUBTREES: u32>(
         leaves: [Field; N],
         num_non_empty_leaves: u32,
     ) -> Self {
-        let root = compute_unbalanced_merkle_root::<N, MAX_SUBTREES>(
-            leaves,
-            num_non_empty_leaves,
-            accumulate_sha256,
-        );
-        UnbalancedMerkleTree { root }
+        Self::new::<N, MAX_SUBTREES>(leaves, num_non_empty_leaves, accumulate_sha256)
     }
 
     pub fn get_root(self) -> Field {
@@ -142,7 +148,7 @@ pub mod tests {
     use crate::utils::accumulate_sha256;
 
     fn compute_balanced_tree_root<let N: u32>(leaves: [Field; N]) -> Field {
-        let tree = MerkleTree::new_sha(leaves);
+        let tree = MerkleTree::new_sha256(leaves);
         tree.get_root()
     }
 
@@ -162,7 +168,7 @@ pub mod tests {
     /// Compares the expected root with the root of the tree generated from the given number of non-empty leaves.
     fn assert_eq_tree_root(num_non_empty_leaves: u32, expected_root: Field) {
         let items: [Field; NUM_TEST_LEAVES] = generate_full_array(1);
-        let tree = UnbalancedMerkleTree::new_sha::<NUM_TEST_LEAVES, MAX_SUBTREES>(
+        let tree = UnbalancedMerkleTree::new_sha256::<NUM_TEST_LEAVES, MAX_SUBTREES>(
             items,
             num_non_empty_leaves,
         );
@@ -407,7 +413,7 @@ pub mod tests {
     fn pow_2_max_leaves_full_leaves() {
         // The leaves array size `N` is a power of 2.
         let leaves: [Field; 8] = generate_full_array(1);
-        let root = UnbalancedMerkleTree::new_sha::<8, 3>(leaves, 8).get_root();
+        let root = UnbalancedMerkleTree::new_sha256::<8, 3>(leaves, 8).get_root();
 
         let array_1_to_8: [Field; 8] = generate_full_array(1);
         let expected_root = compute_balanced_tree_root(array_1_to_8);
@@ -419,7 +425,7 @@ pub mod tests {
     fn pow_2_max_leaves_non_full_leaves() {
         // The leaves array size `N` is a power of 2.
         let leaves: [Field; 8] = generate_full_array(1);
-        let root = UnbalancedMerkleTree::new_sha::<8, 3>(leaves, 7).get_root();
+        let root = UnbalancedMerkleTree::new_sha256::<8, 3>(leaves, 7).get_root();
 
         // 7 = 111 = 4 + 2 + 1
         //
@@ -450,7 +456,7 @@ pub mod tests {
         // Here the number of leaves to process is 7, so the number of subtrees required is 3 (4 + 2 + 1).
         // However, we change the `MAX_SUBTREES` to 2 to skip processing the last subtree.
         let num_non_empty_leaves = 7;
-        let _ = UnbalancedMerkleTree::new_sha::<8, 2>(leaves, num_non_empty_leaves);
+        let _ = UnbalancedMerkleTree::new_sha256::<8, 2>(leaves, num_non_empty_leaves);
     }
 
     #[test]
@@ -459,7 +465,8 @@ pub mod tests {
         // Similar to the above test, but this test passes because there are only 6 leaves to process, so the number of
         // subtrees required is only 2 (4 + 2).
         let num_non_empty_leaves = 6;
-        let root = UnbalancedMerkleTree::new_sha::<8, 2>(leaves, num_non_empty_leaves).get_root();
+        let root =
+            UnbalancedMerkleTree::new_sha256::<8, 2>(leaves, num_non_empty_leaves).get_root();
 
         let array_1_to_4 = [1, 2, 3, 4];
         let size4_tree_root = compute_balanced_tree_root(array_1_to_4);

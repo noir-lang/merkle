@@ -1,4 +1,4 @@
-use crate::utils::{accumulate_sha256, merkle_hash};
+use crate::utils::{accumulate_sha256, poseidon2_hash};
 
 #[derive(Eq)]
 pub struct MerkleTree<let N: u32> {
@@ -12,14 +12,18 @@ impl<let N: u32> MerkleTree<N> {
         MerkleTree { leaves: [0; N], nodes: [0; N - 1] }
     }
 
-    pub fn new(leaves: [Field; N]) -> Self {
-        let nodes = compute_merkle_tree_nodes(leaves, merkle_hash);
+    pub fn new(leaves: [Field; N], hasher: fn(Field, Field) -> Field) -> Self {
+        let nodes = compute_merkle_tree_nodes(leaves, hasher);
         MerkleTree { leaves, nodes }
     }
 
-    pub fn new_sha(leaves: [Field; N]) -> Self {
-        let nodes = compute_merkle_tree_nodes(leaves, accumulate_sha256);
-        MerkleTree { leaves, nodes }
+    // Convenience methods for common hash functions
+    pub fn new_poseidon(leaves: [Field; N]) -> Self {
+        Self::new(leaves, poseidon2_hash)
+    }
+
+    pub fn new_sha256(leaves: [Field; N]) -> Self {
+        Self::new(leaves, accumulate_sha256)
     }
 
     pub fn get_root(self) -> Field {

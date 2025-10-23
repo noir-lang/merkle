@@ -19,13 +19,8 @@ where
     }
 }
 
-fn poseidon2_hash<let N: u32>(inputs: [Field; N]) -> Field {
-    poseidon::poseidon2::Poseidon2::hash(inputs, N)
-}
-
-// TODO: Allow more hash functions to be passed in here.
-pub fn merkle_hash(left: Field, right: Field) -> Field {
-    poseidon2_hash([left, right])
+pub fn poseidon2_hash(left: Field, right: Field) -> Field {
+    poseidon::poseidon2::Poseidon2::hash([left, right], 2)
 }
 
 /// Computes sha256 hash of 2 input fields.
@@ -67,16 +62,26 @@ pub fn field_from_bytes_32_trunc(bytes32: [u8; 32]) -> Field {
     low + high * v
 }
 
-/// Create a poseidon2 Merkle tree and return both the tree and its root
-pub fn create_tree_with_root<let N: u32>(leaves: [Field; N]) -> (MerkleTree<N>, Field) {
-    let tree = MerkleTree::new(leaves);
+/// Create a Merkle tree and return both the tree and its root
+pub fn create_tree_with_root<let N: u32>(
+    leaves: [Field; N],
+    hasher: fn(Field, Field) -> Field,
+) -> (MerkleTree<N>, Field) {
+    let tree = MerkleTree::new(leaves, hasher);
+    let root = tree.get_root();
+    (tree, root)
+}
+
+/// Create a Poseidon Merkle tree and return both the tree and its root
+pub fn create_poseidon_tree_with_root<let N: u32>(leaves: [Field; N]) -> (MerkleTree<N>, Field) {
+    let tree = MerkleTree::new_poseidon(leaves);
     let root = tree.get_root();
     (tree, root)
 }
 
 /// Create a SHA256 Merkle tree and return both the tree and its root
-pub fn create_sha_tree_with_root<let N: u32>(leaves: [Field; N]) -> (MerkleTree<N>, Field) {
-    let tree = MerkleTree::new_sha(leaves);
+pub fn create_sha256_tree_with_root<let N: u32>(leaves: [Field; N]) -> (MerkleTree<N>, Field) {
+    let tree = MerkleTree::new_sha256(leaves);
     let root = tree.get_root();
     (tree, root)
 }
@@ -103,8 +108,9 @@ pub fn verify_membership<let K: u32>(
 pub fn create_and_verify_membership<let N: u32, let K: u32>(
     leaves: [Field; N],
     leaf_index: u32,
+    hasher: fn(Field, Field) -> Field,
 ) -> bool {
-    let (tree, root) = create_tree_with_root(leaves);
+    let (tree, root) = create_tree_with_root(leaves, hasher);
     let witness = create_membership_witness::<N, K>(tree, leaf_index);
     let leaf_value = leaves[leaf_index];
     verify_membership(leaf_value, witness, root)

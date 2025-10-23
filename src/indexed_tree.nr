@@ -3,7 +3,7 @@ pub mod check_valid_low_leaf;
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
-use crate::utils::{check_permutation, create_tree_with_root};
+use crate::utils::{check_permutation, create_tree_with_root, poseidon2_hash};
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32>(
     start_root: Field,
     start_next_available_leaf_index: u64,
@@ -72,6 +72,7 @@ where
                 updated_low_leaf.as_leaf(),
                 witness.leaf_index,
                 witness.sibling_path,
+                poseidon2_hash,
             );
 
             insertion_subtree[value_index] = if is_update {
@@ -93,8 +94,10 @@ where
     );
 
     // Create new subtree to insert into the whole indexed tree
-    let (_, subtree_root) =
-        create_tree_with_root(insertion_subtree.map(|leaf: Leaf| leaf.as_leaf()));
+    let (_, subtree_root) = create_tree_with_root(
+        insertion_subtree.map(|leaf: Leaf| leaf.as_leaf()),
+        poseidon2_hash,
+    );
 
     // Calculate the new root
     // We are inserting a subtree rather than a full tree here
@@ -103,6 +106,7 @@ where
         subtree_root,
         subtree_index as Field,
         new_subtree_sibling_path,
+        poseidon2_hash,
     );
 
     (new_root, start_insertion_index + (values_to_insert.len() as u64))
@@ -154,6 +158,7 @@ where
         updated_low_leaf.as_leaf(),
         low_leaf_membership_witness.leaf_index,
         low_leaf_membership_witness.sibling_path,
+        poseidon2_hash,
     );
 
     if is_update {
@@ -173,6 +178,7 @@ where
             insertion_leaf.as_leaf(),
             next_available_leaf_index as Field,
             insertion_sibling_path,
+            poseidon2_hash,
         );
 
         next_available_leaf_index += 1;

@@ -1,6 +1,7 @@
 use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
 use crate::leaf_preimage::IndexedTreeLeafPreimage;
 use crate::root::compute_root_from_sibling_path;
+use crate::utils::poseidon2_hash;
 
 #[derive(Eq)]
 pub struct MembershipWitness<let N: u32> {
@@ -14,7 +15,7 @@ pub fn check_membership<let N: u32>(
     sibling_path: [Field; N],
     root: Field,
 ) -> bool {
-    let calculated_root = compute_root_from_sibling_path(leaf, index, sibling_path);
+    let calculated_root = compute_root_from_sibling_path(leaf, index, sibling_path, poseidon2_hash);
     calculated_root == root
 }
 
@@ -145,7 +146,7 @@ mod tests {
 
     fn build_tree() -> MerkleTree<4> {
         let leaves = leaf_preimages.map(|leaf_preimage: TestLeafPreimage| leaf_preimage.as_leaf());
-        MerkleTree::new(leaves)
+        MerkleTree::new(leaves, crate::utils::poseidon2_hash)
     }
 
     fn check_membership_at_index(leaf_index: Field, leaf: Field) -> bool {
