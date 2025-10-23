@@ -5,12 +5,6 @@ use crate::unbalanced_merkle_tree::compute_unbalanced_merkle_root;
 use crate::unbalanced_merkle_tree::UnbalancedMerkleTree;
 use crate::utils::accumulate_sha256;
 
-// new Merkle tree
-#[export]
-fn benchmark_merkle_tree_with_poseidon(leaves: [Field; 16]) {
-    let _ = MerkleTree::new(leaves);
-}
-
 #[export]
 fn benchmark_merkle_tree_with_sha256(leaves: [Field; 16]) {
     let _ = MerkleTree::new_sha(leaves);
