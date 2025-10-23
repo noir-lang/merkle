@@ -1,5 +1,9 @@
 use crate::membership::assert_check_membership;
+<<<<<<< HEAD
 use crate::root::compute_root_from_sibling_path;
+=======
+use crate::root::root_from_sibling_path;
+>>>>>>> c8ad8c63e005f8b9a2ac7cd7c862609be2db9ad6
 pub fn insert_subtree_to_snapshot_tree<let N: u32>(
     current_root: Field,
     next_available_leaf_index: u64,
