@@ -27,7 +27,7 @@ impl<let N: u32> MerkleTree<N> {
     }
 
     pub fn sibling_index(index: u32) -> u32 {
-        assert(index < N as u32, "Index out of bounds");
+        assert(index < N, "Index out of bounds");
         if index % 2 == 0 {
             index + 1
         } else {

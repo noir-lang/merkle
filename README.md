@@ -120,6 +120,7 @@ Tested with Noir version 1.0.0-beta.11 or up
 Generate performance benchmarks:
 
 ```bash
+nargo export
 ./scripts/build-gates-report.sh
 ```
 
