@@ -1,6 +1,6 @@
 use crate::membership::check_membership;
 use crate::merkle_tree::MerkleTree;
-use crate::root::root_from_sibling_path;
+use crate::root::compute_root_from_sibling_path;
 use crate::unbalanced_merkle_tree::compute_unbalanced_merkle_root;
 use crate::unbalanced_merkle_tree::UnbalancedMerkleTree;
 use crate::utils::accumulate_sha256;
@@ -30,7 +30,7 @@ fn benchmark_compute_unbalanced_merkle_root(leaves: [Field; 16], num_non_empty_l
 
 #[export]
 fn benchmark_root_from_sibling_path(leaf: Field, leaf_index: Field, sibling_path: [Field; 20]) {
-    let _ = root_from_sibling_path(leaf, leaf_index, sibling_path);
+    let _ = compute_root_from_sibling_path(leaf, leaf_index, sibling_path);
 }
 
 // Membership checking

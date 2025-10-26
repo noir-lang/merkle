@@ -3,6 +3,7 @@ use crate::utils::{accumulate_sha256, merkle_hash};
 #[derive(Eq)]
 pub struct MerkleTree<let N: u32> {
     pub leaves: [Field; N],
+    // nodes are the internal nodes of the Merkle tree, excluding the leaves
     pub nodes: [Field; N - 1],
 }
 
@@ -26,6 +27,7 @@ impl<let N: u32> MerkleTree<N> {
     }
 
     pub fn sibling_index(index: u32) -> u32 {
+        assert(index < N, "Index out of bounds");
         if index % 2 == 0 {
             index + 1
         } else {
@@ -33,6 +35,7 @@ impl<let N: u32> MerkleTree<N> {
         }
     }
 
+    // K is the length of the sibling path, which is the height of the Merkle tree
     pub fn get_sibling_path<let K: u32>(self, leaf_index: u32) -> [Field; K] {
         assert_eq(2.pow_32(K as Field), N as Field, "Invalid path length");
 
@@ -40,7 +43,7 @@ impl<let N: u32> MerkleTree<N> {
         let mut current_index = leaf_index;
         let mut subtree_width = N;
 
-        let mut current_sibling_index = sibling_index(current_index);
+        let mut current_sibling_index = Self::sibling_index(current_index);
 
         path[0] = self.leaves[current_sibling_index];
 
@@ -50,7 +53,7 @@ impl<let N: u32> MerkleTree<N> {
             current_index = current_index / 2;
             subtree_width = subtree_width / 2;
 
-            current_sibling_index = sibling_index(current_index);
+            current_sibling_index = Self::sibling_index(current_index);
 
             path[i] = self.nodes[subtree_offset + current_sibling_index];
 
@@ -58,15 +61,6 @@ impl<let N: u32> MerkleTree<N> {
         }
 
         path
-    }
-}
-
-#[export]
-pub fn sibling_index(index: u32) -> u32 {
-    if index % 2 == 0 {
-        index + 1
-    } else {
-        index - 1
     }
 }
 

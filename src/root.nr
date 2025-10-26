@@ -1,5 +1,4 @@
-use crate::merkle_tree::MerkleTree;
-use crate::utils::merkle_hash;
+use crate::utils::{create_tree_with_root, merkle_hash};
 
 // Calculate the Merkle tree root from the sibling path and leaf.
 //
@@ -11,7 +10,7 @@ use crate::utils::merkle_hash;
 // TODO: I'd generally like to avoid u256 for algorithms like
 // this because it means we never even need to consider cases where
 // the index is greater than p.
-pub fn root_from_sibling_path<let N: u32>(
+pub fn compute_root_from_sibling_path<let N: u32>(
     leaf: Field,
     leaf_index: Field,
     sibling_path: [Field; N],
@@ -28,10 +27,6 @@ pub fn root_from_sibling_path<let N: u32>(
         node = merkle_hash(hash_left, hash_right);
     }
     node
-}
-
-pub fn calculate_subtree_root<let N: u32>(leaves: [Field; N]) -> Field {
-    MerkleTree::new(leaves).get_root()
 }
 
 // These values are precomputed and we run tests to ensure that they
@@ -72,10 +67,10 @@ fn test_merkle_root_interop_test() {
     // This is a test to ensure that we match the cpp implementation.
     // You can grep for `TEST_F(root_rollup_tests, noir_interop_test)`
     // to find the test that matches this.
-    let root = calculate_subtree_root([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+    let (_, root) = create_tree_with_root([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
     assert(0x1a09d935ae110b4c861fcec8f9099ec30b4485022aeb3d3cf9d7168e38fdc231 == root);
 
-    let empty_root = calculate_subtree_root([0; 16]);
+    let (_, empty_root) = create_tree_with_root([0; 16]);
     assert(0x2373ea368857ec7af97e7b470d705848e2bf93ed7bef142a490f2119bcf82d8e == empty_root);
 }
 
@@ -83,33 +78,33 @@ fn test_merkle_root_interop_test() {
 fn test_empty_subroot() {
     assert(calculate_empty_tree_root(0) == 0);
 
-    let expected_empty_root_2 = calculate_subtree_root([0; 2]);
+    let (_, expected_empty_root_2) = create_tree_with_root([0; 2]);
     assert(calculate_empty_tree_root(1) == expected_empty_root_2);
 
-    let expected_empty_root_4 = calculate_subtree_root([0; 4]);
+    let (_, expected_empty_root_4) = create_tree_with_root([0; 4]);
     assert(calculate_empty_tree_root(2) == expected_empty_root_4);
 
-    let expected_empty_root_8 = calculate_subtree_root([0; 8]);
+    let (_, expected_empty_root_8) = create_tree_with_root([0; 8]);
     assert(calculate_empty_tree_root(3) == expected_empty_root_8);
 
-    let expected_empty_root_16 = calculate_subtree_root([0; 16]);
+    let (_, expected_empty_root_16) = create_tree_with_root([0; 16]);
     assert(calculate_empty_tree_root(4) == expected_empty_root_16);
 
-    let expected_empty_root_32 = calculate_subtree_root([0; 32]);
+    let (_, expected_empty_root_32) = create_tree_with_root([0; 32]);
     assert(calculate_empty_tree_root(5) == expected_empty_root_32);
 
-    let expected_empty_root_64 = calculate_subtree_root([0; 64]);
+    let (_, expected_empty_root_64) = create_tree_with_root([0; 64]);
     assert(calculate_empty_tree_root(6) == expected_empty_root_64);
 
-    let expected_empty_root_128 = calculate_subtree_root([0; 128]);
+    let (_, expected_empty_root_128) = create_tree_with_root([0; 128]);
     assert(calculate_empty_tree_root(7) == expected_empty_root_128);
 
-    let expected_empty_root_256 = calculate_subtree_root([0; 256]);
+    let (_, expected_empty_root_256) = create_tree_with_root([0; 256]);
     assert(calculate_empty_tree_root(8) == expected_empty_root_256);
 
-    let expected_empty_root_512 = calculate_subtree_root([0; 512]);
+    let (_, expected_empty_root_512) = create_tree_with_root([0; 512]);
     assert(calculate_empty_tree_root(9) == expected_empty_root_512);
 
-    let expected_empty_root_1024 = calculate_subtree_root([0; 1024]);
+    let (_, expected_empty_root_1024) = create_tree_with_root([0; 1024]);
     assert(calculate_empty_tree_root(10) == expected_empty_root_1024);
 }
