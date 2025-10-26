@@ -8,6 +8,7 @@ pub fn insert_subtree_to_snapshot_tree<let N: u32>(
     empty_subtree_root: Field,
     subtree_root_to_insert: Field,
     subtree_depth: u8,
+    hasher: fn(Field, Field) -> Field,
 ) -> (Field, u64) {
     // TODO(Lasse): Sanity check len of sibling_path > height of subtree
     // TODO(Lasse): Ensure height of subtree is correct (eg 3 for commitments, 1 for contracts)
@@ -19,6 +20,7 @@ pub fn insert_subtree_to_snapshot_tree<let N: u32>(
         leaf_index_at_depth as Field,
         sibling_path,
         current_root,
+        hasher,
     );
 
     // if index of leaf is x, index of its parent is x/2 or x >> 1. We need to find the parent `subtree_depth` levels up.

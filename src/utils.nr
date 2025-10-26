@@ -100,8 +100,9 @@ pub fn verify_membership<let K: u32>(
     leaf: Field,
     witness: MembershipWitness<K>,
     root: Field,
+    hasher: fn(Field, Field) -> Field,
 ) -> bool {
-    check_membership(leaf, witness.leaf_index, witness.sibling_path, root)
+    check_membership(leaf, witness.leaf_index, witness.sibling_path, root, hasher)
 }
 
 /// Create a tree, generate a membership proof, and verify it
@@ -113,5 +114,5 @@ pub fn create_and_verify_membership<let N: u32, let K: u32>(
     let (tree, root) = create_tree_with_root(leaves, hasher);
     let witness = create_membership_witness::<N, K>(tree, leaf_index);
     let leaf_value = leaves[leaf_index];
-    verify_membership(leaf_value, witness, root)
+    verify_membership(leaf_value, witness, root, hasher)
 }

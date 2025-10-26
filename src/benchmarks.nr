@@ -24,8 +24,7 @@ fn benchmark_unbalanced_merkle_tree_new(leaves: [Field; 16], num_non_empty_leave
 // Unbalanced root computation
 #[export]
 fn benchmark_compute_unbalanced_merkle_root(leaves: [Field; 16], num_non_empty_leaves: u32) {
-    let _ =
-        compute_unbalanced_merkle_root::<16, 4>(leaves, num_non_empty_leaves, accumulate_sha256);
+    let _ = compute_unbalanced_merkle_root::<16, 4>(leaves, num_non_empty_leaves, poseidon2_hash);
 }
 
 #[export]
@@ -36,5 +35,5 @@ fn benchmark_root_from_sibling_path(leaf: Field, leaf_index: Field, sibling_path
 // Membership checking
 #[export]
 fn benchmark_check_membership(leaf: Field, index: Field, sibling_path: [Field; 10], root: Field) {
-    let _ = check_membership(leaf, index, sibling_path, root);
+    let _ = check_membership(leaf, index, sibling_path, root, poseidon2_hash);
 }

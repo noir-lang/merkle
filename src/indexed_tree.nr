@@ -2,7 +2,7 @@ pub mod check_valid_low_leaf;
 
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
-use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
+use crate::root::{calculate_empty_tree_root_poseidon, compute_root_from_sibling_path};
 use crate::utils::{check_permutation, create_tree_with_root, poseidon2_hash};
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32>(
     start_root: Field,
@@ -13,6 +13,7 @@ pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u
     new_subtree_sibling_path: [Field; SiblingPathLength],
     low_leaf_preimages: [Leaf; SubtreeWidth],
     low_leaf_membership_witnesses: [MembershipWitness<TreeHeight>; SubtreeWidth],
+    hasher: fn(Field, Field) -> Field,
 ) -> (Field, u64)
 where
     Value: IndexedTreeLeafValue,
@@ -54,6 +55,7 @@ where
                 witness.leaf_index,
                 witness.sibling_path,
                 current_tree_root,
+                hasher,
             );
 
             let value_index = sorted_values_indexes[i];
@@ -83,7 +85,7 @@ where
         }
     }
 
-    let empty_subtree_root = calculate_empty_tree_root(SubtreeHeight);
+    let empty_subtree_root = calculate_empty_tree_root_poseidon(SubtreeHeight);
     let leaf_index_subtree_depth = (start_insertion_index >> (SubtreeHeight as u64)) as u32;
 
     assert_check_membership(
@@ -91,6 +93,7 @@ where
         leaf_index_subtree_depth as Field,
         new_subtree_sibling_path,
         current_tree_root,
+        hasher,
     );
 
     // Create new subtree to insert into the whole indexed tree
@@ -119,6 +122,7 @@ pub fn insert<Value, Leaf, let TreeHeight: u32>(
     low_leaf_preimage: Leaf,
     low_leaf_membership_witness: MembershipWitness<TreeHeight>,
     insertion_sibling_path: [Field; TreeHeight],
+    hasher: fn(Field, Field) -> Field,
 ) -> (Field, u64)
 where
     Value: IndexedTreeLeafValue,
@@ -144,6 +148,7 @@ where
         low_leaf_membership_witness.leaf_index,
         low_leaf_membership_witness.sibling_path,
         current_root,
+        hasher,
     );
 
     // Calculate the new value of the low_leaf
@@ -171,6 +176,7 @@ where
             next_available_leaf_index as Field,
             insertion_sibling_path,
             current_root,
+            hasher,
         );
 
         // Calculate the new root

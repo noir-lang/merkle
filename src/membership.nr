@@ -1,7 +1,6 @@
 use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
 use crate::leaf_preimage::IndexedTreeLeafPreimage;
 use crate::root::compute_root_from_sibling_path;
-use crate::utils::poseidon2_hash;
 
 #[derive(Eq)]
 pub struct MembershipWitness<let N: u32> {
@@ -14,8 +13,9 @@ pub fn check_membership<let N: u32>(
     index: Field,
     sibling_path: [Field; N],
     root: Field,
+    hasher: fn(Field, Field) -> Field,
 ) -> bool {
-    let calculated_root = compute_root_from_sibling_path(leaf, index, sibling_path, poseidon2_hash);
+    let calculated_root = compute_root_from_sibling_path(leaf, index, sibling_path, hasher);
     calculated_root == root
 }
 
@@ -24,8 +24,9 @@ pub fn assert_check_membership<let TREE_HEIGHT: u32>(
     index: Field,
     sibling_path: [Field; TREE_HEIGHT],
     root: Field,
+    hasher: fn(Field, Field) -> Field,
 ) {
-    assert(check_membership(leaf, index, sibling_path, root), "membership check failed");
+    assert(check_membership(leaf, index, sibling_path, root, hasher), "membership check failed");
 }
 
 pub fn assert_check_non_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE, VALUE>(
@@ -33,6 +34,7 @@ pub fn assert_check_non_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE, VALUE>(
     low_leaf_preimage: LEAF_PREIMAGE,
     low_leaf_membership_witness: MembershipWitness<TREE_HEIGHT>,
     tree_root: Field,
+    hasher: fn(Field, Field) -> Field,
 )
 where
     LEAF_PREIMAGE: IndexedTreeLeafPreimage<VALUE>,
@@ -44,6 +46,7 @@ where
         low_leaf_membership_witness.leaf_index,
         low_leaf_membership_witness.sibling_path,
         tree_root,
+        hasher,
     );
     assert(low_leaf_exists, "Low leaf does not exist");
 }
@@ -56,6 +59,7 @@ pub fn conditionally_assert_check_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE
     leaf_preimage: LEAF_PREIMAGE,
     membership_witness: MembershipWitness<TREE_HEIGHT>,
     tree_root: Field,
+    hasher: fn(Field, Field) -> Field,
 )
 where
     LEAF_PREIMAGE: IndexedTreeLeafPreimage<VALUE>,
@@ -71,6 +75,7 @@ where
         membership_witness.leaf_index,
         membership_witness.sibling_path,
         tree_root,
+        hasher,
     );
 }
 
@@ -85,6 +90,7 @@ mod tests {
         },
         merkle_tree::MerkleTree,
     };
+    use crate::utils::poseidon2_hash;
 
     struct TestLeafPreimage {
         value: Field,
@@ -146,7 +152,7 @@ mod tests {
 
     fn build_tree() -> MerkleTree<4> {
         let leaves = leaf_preimages.map(|leaf_preimage: TestLeafPreimage| leaf_preimage.as_leaf());
-        MerkleTree::new(leaves, crate::utils::poseidon2_hash)
+        MerkleTree::new(leaves, poseidon2_hash)
     }
 
     fn check_membership_at_index(leaf_index: Field, leaf: Field) -> bool {
@@ -158,6 +164,7 @@ mod tests {
             leaf_index,
             tree.get_sibling_path::<2>(leaf_index as u32),
             tree_root,
+            poseidon2_hash,
         )
     }
 
@@ -170,6 +177,7 @@ mod tests {
             leaf_index,
             tree.get_sibling_path::<2>(leaf_index as u32),
             tree_root,
+            poseidon2_hash,
         );
     }
 
@@ -190,6 +198,7 @@ mod tests {
                 sibling_path: tree.get_sibling_path::<2>(low_leaf_index),
             },
             tree_root,
+            poseidon2_hash,
         );
     }
 
@@ -215,6 +224,7 @@ mod tests {
                 sibling_path: tree.get_sibling_path::<2>(low_leaf_index),
             },
             tree_root,
+            poseidon2_hash,
         );
     }
 
@@ -271,6 +281,7 @@ mod tests {
             0,
             tree.get_sibling_path::<2>(0),
             tree_root,
+            poseidon2_hash,
         );
         assert_eq(res, false);
     }
@@ -285,6 +296,7 @@ mod tests {
             0,
             tree.get_sibling_path::<2>(0),
             tree_root,
+            poseidon2_hash,
         );
     }
 
@@ -319,6 +331,7 @@ mod tests {
             fake_leaf,
             MembershipWitness { leaf_index: 1, sibling_path: tree.get_sibling_path::<2>(1) },
             tree_root,
+            poseidon2_hash,
         );
     }
 
@@ -359,6 +372,7 @@ mod tests {
             fake_leaf,
             MembershipWitness { leaf_index: 1, sibling_path: tree.get_sibling_path::<2>(1) },
             tree_root,
+            poseidon2_hash,
         );
     }
 
@@ -374,6 +388,7 @@ mod tests {
             fake_leaf,
             MembershipWitness { leaf_index: 1, sibling_path: tree.get_sibling_path::<2>(1) },
             tree_root,
+            poseidon2_hash,
         );
     }
 }
