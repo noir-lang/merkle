@@ -1,6 +1,6 @@
 use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
 use crate::leaf_preimage::IndexedTreeLeafPreimage;
-use crate::root::root_from_sibling_path;
+use crate::root::compute_root_from_sibling_path;
 
 #[derive(Eq)]
 pub struct MembershipWitness<let N: u32> {
@@ -14,7 +14,7 @@ pub fn check_membership<let N: u32>(
     sibling_path: [Field; N],
     root: Field,
 ) -> bool {
-    let calculated_root = root_from_sibling_path(leaf, index, sibling_path);
+    let calculated_root = compute_root_from_sibling_path(leaf, index, sibling_path);
     calculated_root == root
 }
 
