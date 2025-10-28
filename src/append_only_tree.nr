@@ -1,6 +1,5 @@
 use crate::membership::assert_check_membership;
 use crate::root::compute_root_from_sibling_path;
-use crate::utils::poseidon2_hash;
 pub fn insert_subtree_to_snapshot_tree<let N: u32>(
     current_root: Field,
     next_available_leaf_index: u64,

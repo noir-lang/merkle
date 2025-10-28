@@ -30,6 +30,22 @@ pub fn compute_root_from_sibling_path<let N: u32>(
     node
 }
 
+/// Calculate the root of an empty Merkle tree (filled with zeros) for any hash function
+///
+/// This function computes the root of a complete binary tree of given depth where all leaves are zero.
+/// For depth d, the tree has 2^d leaves, all set to 0.
+pub fn calculate_empty_tree_root(depth: u32, hasher: fn(Field, Field) -> Field) -> Field {
+    assert(depth < 11, "Depth must be between 0 and 10");
+    let mut current_value = 0;
+    for i in 1..11 {
+        if depth >= i {
+            // Build the tree bottom-up by hashing pairs
+            current_value = hasher(current_value, current_value);
+        }
+    }
+    current_value
+}
+
 // These values are precomputed and we run tests to ensure that they
 // are correct. The values themselves were computed from the cpp code.
 //
@@ -61,6 +77,21 @@ pub fn calculate_empty_tree_root_poseidon(depth: u32) -> Field {
     } else {
         panic(f"depth should be between 0 and 10")
     }
+}
+
+#[test]
+fn test_calculate_empty_tree_root() {
+    assert(calculate_empty_tree_root(0, poseidon2_hash) == calculate_empty_tree_root_poseidon(0));
+    assert(calculate_empty_tree_root(1, poseidon2_hash) == calculate_empty_tree_root_poseidon(1));
+    assert(calculate_empty_tree_root(2, poseidon2_hash) == calculate_empty_tree_root_poseidon(2));
+    assert(calculate_empty_tree_root(3, poseidon2_hash) == calculate_empty_tree_root_poseidon(3));
+    assert(calculate_empty_tree_root(4, poseidon2_hash) == calculate_empty_tree_root_poseidon(4));
+    assert(calculate_empty_tree_root(5, poseidon2_hash) == calculate_empty_tree_root_poseidon(5));
+    assert(calculate_empty_tree_root(6, poseidon2_hash) == calculate_empty_tree_root_poseidon(6));
+    assert(calculate_empty_tree_root(7, poseidon2_hash) == calculate_empty_tree_root_poseidon(7));
+    assert(calculate_empty_tree_root(8, poseidon2_hash) == calculate_empty_tree_root_poseidon(8));
+    assert(calculate_empty_tree_root(9, poseidon2_hash) == calculate_empty_tree_root_poseidon(9));
+    assert(calculate_empty_tree_root(10, poseidon2_hash) == calculate_empty_tree_root_poseidon(10));
 }
 
 #[test]
