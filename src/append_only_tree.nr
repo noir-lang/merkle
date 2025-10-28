@@ -28,7 +28,7 @@ pub fn insert_subtree_to_snapshot_tree<let N: u32>(
         subtree_root_to_insert,
         leaf_index_at_depth as Field,
         sibling_path,
-        poseidon2_hash,
+        hasher,
     );
 
     // 2^subtree_depth is the number of leaves added. 2^x = 1 << x
