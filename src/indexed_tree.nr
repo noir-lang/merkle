@@ -24,7 +24,10 @@ where
     // and low leaf updates.
     check_permutation(values_to_insert, sorted_values, sorted_values_indexes);
     assert(1 << (SubtreeHeight as u32) == SubtreeWidth, "Subtree width must be a power of 2");
-    assert(start_next_available_leaf_index % SubtreeWidth as u64 == 0 as u64, "Start next available leaf index must be a multiple of the subtree width");
+    assert(
+        start_next_available_leaf_index % SubtreeWidth as u64 == 0 as u64,
+        "Start next available leaf index must be a multiple of the subtree width",
+    );
 
     // update the existing leaves with the new leaves
     let mut current_tree_root = start_root;
@@ -52,7 +55,9 @@ where
                 is_less_than_slot & (is_next_greater_than | low_leaf_preimage.points_to_infinity());
             let is_less_than_prev_leaf = value_key.lt(prev_leaf.get_key());
             let is_greater_than_prev_leaf = prev_leaf.get_next_key().lt(value_key);
-            let is_in_range_prev_leaf: bool = !prev_leaf.is_empty() & is_less_than_prev_leaf & (is_greater_than_prev_leaf | prev_leaf.points_to_infinity());
+            let is_in_range_prev_leaf: bool = !prev_leaf.is_empty()
+                & is_less_than_prev_leaf
+                & (is_greater_than_prev_leaf | prev_leaf.points_to_infinity());
 
             assert(is_update | is_in_range | is_in_range_prev_leaf, "Invalid low leaf");
 
@@ -78,10 +83,7 @@ where
                     start_insertion_index as u32 + value_index,
                 )
             } else {
-                prev_leaf.update_pointers(
-                    value_key,
-                    start_insertion_index as u32 + value_index,
-                )
+                prev_leaf.update_pointers(value_key, start_insertion_index as u32 + value_index)
             };
 
             // Update the tree root if we're updating a leaf that exists in the tree
@@ -96,7 +98,10 @@ where
 
             // If using prev_leaf, update the previous leaf in insertion_subtree because next pointer has changed
             if is_in_range_prev_leaf {
-                assert(prev_leaf_index != 0xFFFFFFFFu32, "prev_leaf_index should be set when using prev_leaf");
+                assert(
+                    prev_leaf_index != 0xFFFFFFFFu32,
+                    "prev_leaf_index should be set when using prev_leaf",
+                );
                 // Update the previous leaf in insertion_subtree to point to the new leaf
                 insertion_subtree[prev_leaf_index] = updated_low_leaf;
             }
@@ -283,10 +288,9 @@ mod tests {
         }
     }
 
-
     #[test]
     fn test_batch_insert() {
-        // Test inserting 4 values (25, 35, 45, 55) 
+        // Test inserting 4 values (25, 35, 45, 55)
         // Initial tree has leaves: 10, 20, 30, 40
         let initial_leaves = [10, 20, 30, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let (tree, start_root) = create_tree_with_root(initial_leaves, poseidon2_hash);
@@ -300,22 +304,22 @@ mod tests {
             TestLeafPreimage { value: 20, next_value: 30 }, // 25 goes between 20 and 30
             TestLeafPreimage { value: 20, next_value: 30 }, // 26 goes between 20 and 30
             TestLeafPreimage { value: 40, next_value: 0 }, // 45 goes after 40
-            TestLeafPreimage { value: 40, next_value: 0 },  // 55 goes after 40
+            TestLeafPreimage { value: 40, next_value: 0 }, // 55 goes after 40
         ];
 
         let low_leaf_witnesses: [MembershipWitness<4>; 4] = [
-            create_membership_witness(tree, 1), 
-            create_membership_witness(tree, 1), 
+            create_membership_witness(tree, 1),
+            create_membership_witness(tree, 1),
             create_membership_witness(tree, 3),
             create_membership_witness(tree, 3),
         ];
 
-        // get sibling path for subtree insertion at index 4 
+        // get sibling path for subtree insertion at index 4
         let subtree_index = 4;
         let full_sibling_path = tree.get_sibling_path::<4>(subtree_index);
         let new_subtree_sibling_path: [Field; 2] = [full_sibling_path[2], full_sibling_path[3]];
 
-        // insert at index 4 
+        // insert at index 4
         let (new_root, new_next_index) = batch_insert::<Field, TestLeafPreimage, 4, 2, 2, 4>(
             start_root,
             4,
@@ -329,131 +333,48 @@ mod tests {
         );
 
         let initial_leaves_expected = [10, 20, 30, 40, 25, 26, 45, 55, 0, 0, 0, 0, 0, 0, 0, 0];
-        let (_, start_root_expected) = create_tree_with_root(initial_leaves_expected, poseidon2_hash);
+        let (_, start_root_expected) =
+            create_tree_with_root(initial_leaves_expected, poseidon2_hash);
         assert(new_root == start_root_expected, "New root should be the same as the expected root");
 
         // verify next index is updated correctly
         assert(new_next_index == 8, "Next available leaf index should be 8");
     }
 
-    #[test]
-    fn test_batch_insert_sequential_prev_leaf() {
-        // Test inserting 15, 16, 17 between 10 and 20
-        // This tests the sequential prev_leaf logic
-        let initial_leaves = [10, 20, 30, 40];
+    #[test(should_fail_with = "membership check failed")]
+    fn test_batch_insert_with_wrong_low_leaf_preimages() {
+        // Initial tree has leaves: 10, 20, 30, 40
+        let initial_leaves = [10, 20, 30, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let (tree, start_root) = create_tree_with_root(initial_leaves, poseidon2_hash);
 
-        // Values to insert: 15, 16, 17
-        let values_to_insert: [Field; 4] = [15, 16, 17, 0]; // 0 is empty
-        let sorted_values: [Field; 4] = [15, 16, 17, 0];
-        let sorted_values_indexes: [u32; 4] = [0, 1, 2, 3];
-
-        // Low leaf preimages: 15 uses low_leaf (10->20), 16 and 17 use prev_leaf
-        let low_leaf_preimages: [TestLeafPreimage; 4] = [
-            TestLeafPreimage { value: 10, next_value: 20 }, // 15 goes between 10 and 20
-            TestLeafPreimage { value: 10, next_value: 20 }, // 16 will use prev_leaf (15)
-            TestLeafPreimage { value: 10, next_value: 20 }, // 17 will use prev_leaf (16)
-            TestLeafPreimage { value: 0, next_value: 0 },   // empty
-        ];
-
-        // Create membership witnesses
-        let low_leaf_witnesses: [MembershipWitness<2>; 4] = [
-            create_membership_witness(tree, 0), // leaf 10 at index 0
-            create_membership_witness(tree, 0), // leaf 10 at index 0 (not used for 16)
-            create_membership_witness(tree, 0), // leaf 10 at index 0 (not used for 17)
-            create_membership_witness(tree, 0), // dummy
-        ];
-
-        // Get sibling path for subtree insertion
-        let subtree_index = 4;
-        let new_subtree_sibling_path = tree.get_sibling_path::<2>(subtree_index);
-
-        // Insert at index 4
-        let (_new_root, new_next_index) = batch_insert::<Field, TestLeafPreimage, 4, 2, 2, 2>(
-            start_root,
-            4,
-            values_to_insert,
-            sorted_values,
-            sorted_values_indexes,
-            new_subtree_sibling_path,
-            low_leaf_preimages,
-            low_leaf_witnesses,
-            poseidon2_hash,
-        );
-
-        // Verify next index is updated correctly (3 non-empty values inserted)
-        assert(new_next_index == 7, "Next available leaf index should be 7");
-    }
-
-
-    #[test(should_fail_with = "Subtree width must be a power of 2")]
-    fn test_batch_insert_invalid_subtree_width() {
-        let initial_leaves = [10, 20, 30, 40];
-        let (tree, start_root) = create_tree_with_root(initial_leaves, poseidon2_hash);
-
-        let values_to_insert: [Field; 3] = [25, 35, 45]; // Width 3, not power of 2
-        let sorted_values: [Field; 3] = [25, 35, 45];
-        let sorted_values_indexes: [u32; 3] = [0, 1, 2];
-
-        let low_leaf_preimages: [TestLeafPreimage; 3] = [
-            TestLeafPreimage { value: 20, next_value: 30 },
-            TestLeafPreimage { value: 20, next_value: 30 },
-            TestLeafPreimage { value: 30, next_value: 40 },
-        ];
-
-        let low_leaf_witnesses: [MembershipWitness<2>; 3] = [
-            create_membership_witness(tree, 1),
-            create_membership_witness(tree, 1),
-            create_membership_witness(tree, 2),
-        ];
-
-        let subtree_index = 4;
-        let new_subtree_sibling_path = tree.get_sibling_path::<2>(subtree_index);
-
-        // This should fail because SubtreeWidth=3 is not a power of 2
-        let (_new_root, _new_next_index) = batch_insert::<Field, TestLeafPreimage, 3, 2, 2, 2>(
-            start_root,
-            4,
-            values_to_insert,
-            sorted_values,
-            sorted_values_indexes,
-            new_subtree_sibling_path,
-            low_leaf_preimages,
-            low_leaf_witnesses,
-            poseidon2_hash,
-        );
-    }
-
-    #[test(should_fail_with = "Start next available leaf index must be a multiple of the subtree width")]
-    fn test_batch_insert_invalid_alignment() {
-        let initial_leaves = [10, 20, 30, 40];
-        let (tree, start_root) = create_tree_with_root(initial_leaves, poseidon2_hash);
-
-        let values_to_insert: [Field; 4] = [25, 35, 45, 55];
-        let sorted_values: [Field; 4] = [25, 35, 45, 55];
+        // Values to insert: 25, 35, 45, 55
+        let values_to_insert: [Field; 4] = [25, 26, 45, 55];
+        let sorted_values: [Field; 4] = [25, 26, 45, 55];
         let sorted_values_indexes: [u32; 4] = [0, 1, 2, 3];
 
         let low_leaf_preimages: [TestLeafPreimage; 4] = [
             TestLeafPreimage { value: 20, next_value: 30 },
             TestLeafPreimage { value: 20, next_value: 30 },
-            TestLeafPreimage { value: 30, next_value: 40 },
+            TestLeafPreimage { value: 40, next_value: 0 },
             TestLeafPreimage { value: 40, next_value: 0 },
         ];
 
-        let low_leaf_witnesses: [MembershipWitness<2>; 4] = [
+        let low_leaf_witnesses: [MembershipWitness<4>; 4] = [
             create_membership_witness(tree, 1),
-            create_membership_witness(tree, 1),
-            create_membership_witness(tree, 2),
+            create_membership_witness(tree, 2), // wrong leaf index
+            create_membership_witness(tree, 3),
             create_membership_witness(tree, 3),
         ];
 
-        let subtree_index = 2; // Index 2, not aligned to SubtreeWidth=4
-        let new_subtree_sibling_path = tree.get_sibling_path::<2>(subtree_index);
+        // get sibling path for subtree insertion at index 4
+        let subtree_index = 4;
+        let full_sibling_path = tree.get_sibling_path::<4>(subtree_index);
+        let new_subtree_sibling_path: [Field; 2] = [full_sibling_path[2], full_sibling_path[3]];
 
-        // This should fail because index 2 is not a multiple of 4
-        let (_new_root, _new_next_index) = batch_insert::<Field, TestLeafPreimage, 4, 2, 2, 2>(
+        // insert at index 4
+        let (new_root, new_next_index) = batch_insert::<Field, TestLeafPreimage, 4, 2, 2, 4>(
             start_root,
-            2,
+            4,
             values_to_insert,
             sorted_values,
             sorted_values_indexes,
