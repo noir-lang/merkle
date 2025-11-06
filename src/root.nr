@@ -48,7 +48,7 @@ where
     for i in 1..11 {
         // Build the tree bottom-up by hashing pairs
         let new_value = hash_nodes::<H>(current_value, current_value);
-        if i < depth {
+        if i <= depth {
             current_value = new_value;
         }
     }
