@@ -23,101 +23,104 @@ merkle = { tag = "v0.1.0", git = "https://github.com/noir-lang/merkle" }
 ### Poseidon Merkle Tree
 
 ```noir
-use merkle::{MerkleTree, check_membership, create_poseidon_tree_with_root, create_membership_witness, verify_membership, poseidon2_hash};
+use merkle::{MerkleTree, check_membership, create_tree_with_root, create_membership_witness, verify_membership};
+use poseidon::poseidon2::Poseidon2Hasher;
 
-// Example 1: Basic Merkle Tree with poseidon hash function
+// Example 1: Basic Merkle Tree with Poseidon2 hasher
 let leaves = [1, 2, 3, 4];
-let tree = MerkleTree::new(leaves, poseidon2_hash);
+let tree = MerkleTree::<4, Poseidon2Hasher>::new(leaves);
 let root = tree.get_root();
 
 // Generate membership proof
 let sibling_path = tree.get_sibling_path::<2>(1);
-let is_member = check_membership(2, 1, sibling_path, root);
+let is_member = check_membership::<2, Poseidon2Hasher>(2, 1, sibling_path, root);
 assert(is_member, "Leaf should be in tree");
 
 // Example 2: Using helper functions
-let (tree2, root2) = create_poseidon_tree_with_root([10, 20, 30, 40]);
-let witness = create_membership_witness::<4, 2>(tree2, 0);
-let verified = verify_membership(10, witness, root2);
+let (tree2, root2) = create_tree_with_root::<4, Poseidon2Hasher>([10, 20, 30, 40]);
+let witness = create_membership_witness::<4, 2, Poseidon2Hasher>(tree2, 0);
+let verified = verify_membership::<2, Poseidon2Hasher>(10, witness, root2);
 assert(verified, "Membership should be verified");
 ```
 
-### SHA256 Merkle Tree
-
-```noir
-use merkle::{MerkleTree, create_sha256_tree_with_root, accumulate_sha256};
-
-// Create tree with SHA256 hashing using helper function
-let (sha_tree, sha_root) = create_sha256_tree_with_root([100, 200, 300, 400]);
-```
 
 ### Unbalanced Merkle Tree
 
 ```noir
-use merkle::{UnbalancedMerkleTree, accumulate_sha256};
+use merkle::UnbalancedMerkleTree;
+use poseidon::poseidon2::Poseidon2Hasher;
 
 // Create unbalanced tree (any number of leaves)
 let unbalanced_leaves = [1, 2, 3, 4, 5, 6, 7]; // 7 leaves (not power of 2)
-let unbalanced_tree = UnbalancedMerkleTree::new_sha256::<8, 3>(unbalanced_leaves, 7);
+let unbalanced_tree = UnbalancedMerkleTree::<Poseidon2Hasher>::new::<8, 3>(unbalanced_leaves, 7);
 let unbalanced_root = unbalanced_tree.get_root();
-
-// Or create with custom hash function
-let unbalanced_tree2 = UnbalancedMerkleTree::new::<8, 3>(unbalanced_leaves, 7, accumulate_sha256);
-let unbalanced_root2 = unbalanced_tree2.get_root();
 ```
 
 ### Custom Hash Functions
 
+can check noir library std::hash::hasher for details
+
 ```noir
 use merkle::{MerkleTree, create_tree_with_root};
+use std::hash::Hasher;
 
-// Define a custom hash function
-fn my_custom_hash(left: Field, right: Field) -> Field {
-    // Your custom hashing logic here
-    // For example, simple addition (not recommended for production!)
-    left + right
+// Define a custom hasher type that implements Hasher + Default
+struct MyCustomHasher {
+    // Your hasher state here
 }
 
-// Use custom hash function
+impl Hasher for MyCustomHasher {
+    fn write(&mut self, value: Field) {
+        // Write value to hasher state
+    }
+    
+    fn finish(self) -> Field {
+        // Return final hash
+    }
+}
+
+impl Default for MyCustomHasher {
+    fn default() -> Self {
+        // Initialize hasher
+    }
+}
+
+// Use custom hasher
 let leaves = [1, 2, 3, 4];
-let tree = MerkleTree::new(leaves, my_custom_hash);
+let tree = MerkleTree::<4, MyCustomHasher>::new(leaves);
 let root = tree.get_root();
 
 // Or use with convenience function
-let (tree2, root2) = create_tree_with_root(leaves, my_custom_hash);
+let (tree2, root2) = create_tree_with_root::<4, MyCustomHasher>(leaves);
 ```
 
 ## API Reference
 
 ### Core Types
 
-- `MerkleTree<N>` - Regular Merkle tree with N leaves (N must be power of 2)
-- `UnbalancedMerkleTree` - Variable-size Merkle tree for any number of leaves
+- `MerkleTree<N, H>` - Regular Merkle tree with N leaves (N must be power of 2) using hasher H
+- `UnbalancedMerkleTree<H>` - Variable-size Merkle tree for any number of leaves using hasher H
 - `MembershipWitness<K>` - Membership proof for tree of height K
 - `IndexedTreeLeafPreimage<Value>` - Trait for indexed tree leaves
 - `IndexedTreeLeafValue` - Trait for indexed tree values
 
 ### Hash Functions
 
-The library supports many hash functions for Merkle tree construction:
+The library uses the `Hasher` trait from `std::hash::Hasher` for Merkle tree construction. Hashers must implement `Hasher + Default`.
 
-- `poseidon2_hash(left, right)` - Poseidon2 hash function (default for Poseidon trees)
-- `accumulate_sha256(left, right)` - accumulate SHA256 hash function (default for SHA256 trees)
-- Custom hash functions - Any function with signature `fn(Field, Field) -> Field`
+Common hashers:
+- `Poseidon2Hasher` from `poseidon::poseidon2::Poseidon2Hasher` - Poseidon2 hasher (recommended for most use cases)
+- `Sha256Hasher` from `std::hash::sha256::Sha256Hasher` - SHA256 hasher
+- Custom hashers - Any type implementing `Hasher + Default`
 
 ### Tree Creation
 
 #### Regular Merkle Trees
-- `MerkleTree::new(leaves, hasher)` - Create tree with custom hash function
-- `MerkleTree::new_poseidon(leaves)` - Create tree with Poseidon2 hash
-- `MerkleTree::new_sha256(leaves)` - Create tree with SHA256 hash
-- `create_tree_with_root(leaves, hasher)` - Create tree with custom hash and return both tree and root
-- `create_poseidon_tree_with_root(leaves)` - Create Poseidon tree and return both tree and root
-- `create_sha256_tree_with_root(leaves)` - Create SHA256 tree and return both tree and root
+- `MerkleTree::<N, H>::new(leaves)` - Create tree with hasher type H
+- `create_tree_with_root::<N, H>(leaves)` - Create tree with hasher H and return both tree and root
 
 #### Unbalanced Merkle Trees
-- `UnbalancedMerkleTree::new(leaves, num_leaves, hasher)` - Create unbalanced tree with custom hash function
-- `UnbalancedMerkleTree::new_sha256(leaves, num_leaves)` - Create unbalanced tree with SHA256 hash
+- `UnbalancedMerkleTree::<H>::new::<N, MAX_SUBTREES>(leaves, num_leaves)` - Create unbalanced tree with hasher H
 
 ### Tree Operations
 
@@ -126,21 +129,22 @@ The library supports many hash functions for Merkle tree construction:
 - `tree.get_sibling_path::<K>(leaf_index)` - Generate membership proof
 
 #### Membership Proofs
-- `check_membership(leaf, index, path, root, hasher)` - Verify membership (returns bool)
-- `assert_check_membership(leaf, index, path, root, hasher)` - Assert membership (panics if false)
-- `check_non_membership(leaf, index, path, root, hasher)` - Verify non-membership
-- `create_membership_witness(tree, leaf_index)` - Generate complete witness
-- `verify_membership(leaf, witness, root, hasher)` - Verify using witness
+- `check_membership::<K, H>(leaf, index, path, root)` - Verify membership (returns bool)
+- `assert_check_membership::<TREE_HEIGHT, H>(leaf, index, path, root)` - Assert membership (panics if false)
+- `assert_check_non_membership::<TREE_HEIGHT, LEAF_PREIMAGE, VALUE, H>(key, low_leaf, witness, root)` - Verify non-membership
+- `create_membership_witness::<N, K, H>(tree, leaf_index)` - Generate complete witness
+- `verify_membership::<K, H>(leaf, witness, root)` - Verify using witness
 
 #### Utility Functions
-- `compute_root_from_sibling_path(leaf, index, path, hasher)` - Reconstruct root from proof
-- `calculate_empty_tree_root_poseidon(depth)` - Get precomputed empty tree root
+- `compute_root_from_sibling_path::<N, H>(leaf, index, path)` - Reconstruct root from proof
+- `calculate_empty_tree_root::<H>(depth)` - Calculate empty tree root for hasher H
+- `calculate_empty_tree_root_poseidon(depth)` - Get precomputed empty tree root for Poseidon2
 
 ### Indexed Tree Operations
 
 #### Insertion
-- `insert(root, next_index, value, low_leaf, witness, path, hasher)` - Insert single value
-- `batch_insert(root, next_index, values, sorted_values, ...)` - Insert multiple values
+- `insert::<Value, Leaf, TREE_HEIGHT, H>(root, next_index, value, low_leaf, witness, path)` - Insert single value
+- `batch_insert::<Value, Leaf, SubtreeWidth, SiblingPathLength, SubtreeHeight, TreeHeight, H>(root, next_index, values, sorted_values, ...)` - Insert multiple values
 
 #### Validation
 - `assert_check_valid_low_leaf(value, low_leaf, witness, root)` - Validate insertion position
