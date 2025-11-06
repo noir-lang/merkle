@@ -46,9 +46,10 @@ where
     assert(depth < 11, "Depth must be between 0 and 10");
     let mut current_value = 0;
     for i in 1..11 {
-        if depth >= i {
-            // Build the tree bottom-up by hashing pairs
-            current_value = hash_nodes::<H>(current_value, current_value);
+        // Build the tree bottom-up by hashing pairs
+        let new_value = hash_nodes::<H>(current_value, current_value);
+        if i < depth {
+            current_value = new_value;
         }
     }
     current_value
