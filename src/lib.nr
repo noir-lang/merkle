@@ -22,7 +22,6 @@ pub use root::{
 };
 pub use unbalanced_merkle_tree::UnbalancedMerkleTree;
 pub use utils::{
-    accumulate_sha256, create_and_verify_membership, create_membership_witness,
-    create_poseidon_tree_with_root, create_sha256_tree_with_root, create_tree_with_root,
-    poseidon2_hash, verify_membership,
+    create_and_verify_membership, create_membership_witness, create_tree_with_root, poseidon2_hash,
+    verify_membership,
 };
