@@ -1,4 +1,7 @@
-use crate::utils::{create_tree_with_root, merkle_hash};
+use crate::merkle_tree::hash_nodes;
+use crate::utils::create_tree_with_root;
+use poseidon::poseidon2::Poseidon2Hasher;
+use std::hash::Hasher;
 
 // Calculate the Merkle tree root from the sibling path and leaf.
 //
@@ -10,11 +13,14 @@ use crate::utils::{create_tree_with_root, merkle_hash};
 // TODO: I'd generally like to avoid u256 for algorithms like
 // this because it means we never even need to consider cases where
 // the index is greater than p.
-pub fn compute_root_from_sibling_path<let N: u32>(
+pub fn compute_root_from_sibling_path<let N: u32, H>(
     leaf: Field,
     leaf_index: Field,
     sibling_path: [Field; N],
-) -> Field {
+) -> Field
+where
+    H: Hasher + Default,
+{
     let mut node = leaf;
     let indices: [u1; N] = leaf_index.to_le_bits();
 
@@ -24,9 +30,29 @@ pub fn compute_root_from_sibling_path<let N: u32>(
         } else {
             (node, sibling_path[i])
         };
-        node = merkle_hash(hash_left, hash_right);
+        node = hash_nodes::<H>(hash_left, hash_right);
     }
     node
+}
+
+/// Calculate the root of an empty Merkle tree (filled with zeros) for any hash function
+///
+/// This function computes the root of a complete binary tree of given depth where all leaves are zero.
+/// For depth d, the tree has 2^d leaves, all set to 0.
+pub fn calculate_empty_tree_root<H>(depth: u32) -> Field
+where
+    H: Hasher + Default,
+{
+    assert(depth < 11, "Depth must be between 0 and 10");
+    let mut current_value = 0;
+    for i in 1..11 {
+        // Build the tree bottom-up by hashing pairs
+        let new_value = hash_nodes::<H>(current_value, current_value);
+        if i <= depth {
+            current_value = new_value;
+        }
+    }
+    current_value
 }
 
 // These values are precomputed and we run tests to ensure that they
@@ -34,7 +60,7 @@ pub fn compute_root_from_sibling_path<let N: u32>(
 //
 // Would be good if we could use width since the compute_subtree
 // algorithm uses depth.
-pub fn calculate_empty_tree_root(depth: u32) -> Field {
+pub fn calculate_empty_tree_root_poseidon(depth: u32) -> Field {
     if depth == 0 {
         0
     } else if depth == 1 {
@@ -63,48 +89,87 @@ pub fn calculate_empty_tree_root(depth: u32) -> Field {
 }
 
 #[test]
+fn test_calculate_empty_tree_root() {
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(0) == calculate_empty_tree_root_poseidon(0),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(1) == calculate_empty_tree_root_poseidon(1),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(2) == calculate_empty_tree_root_poseidon(2),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(3) == calculate_empty_tree_root_poseidon(3),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(4) == calculate_empty_tree_root_poseidon(4),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(5) == calculate_empty_tree_root_poseidon(5),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(6) == calculate_empty_tree_root_poseidon(6),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(7) == calculate_empty_tree_root_poseidon(7),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(8) == calculate_empty_tree_root_poseidon(8),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(9) == calculate_empty_tree_root_poseidon(9),
+    );
+    assert(
+        calculate_empty_tree_root::<Poseidon2Hasher>(10) == calculate_empty_tree_root_poseidon(10),
+    );
+}
+
+#[test]
 fn test_merkle_root_interop_test() {
     // This is a test to ensure that we match the cpp implementation.
     // You can grep for `TEST_F(root_rollup_tests, noir_interop_test)`
     // to find the test that matches this.
-    let (_, root) = create_tree_with_root([1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]);
+    let (_, root) = create_tree_with_root::<16, Poseidon2Hasher>([
+        1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4,
+    ]);
     assert(0x1a09d935ae110b4c861fcec8f9099ec30b4485022aeb3d3cf9d7168e38fdc231 == root);
 
-    let (_, empty_root) = create_tree_with_root([0; 16]);
+    let (_, empty_root) = create_tree_with_root::<16, Poseidon2Hasher>([0; 16]);
     assert(0x2373ea368857ec7af97e7b470d705848e2bf93ed7bef142a490f2119bcf82d8e == empty_root);
 }
 
 #[test]
 fn test_empty_subroot() {
-    assert(calculate_empty_tree_root(0) == 0);
+    assert(calculate_empty_tree_root_poseidon(0) == 0);
 
-    let (_, expected_empty_root_2) = create_tree_with_root([0; 2]);
-    assert(calculate_empty_tree_root(1) == expected_empty_root_2);
+    let (_, expected_empty_root_2) = create_tree_with_root::<2, Poseidon2Hasher>([0; 2]);
+    assert(calculate_empty_tree_root_poseidon(1) == expected_empty_root_2);
 
-    let (_, expected_empty_root_4) = create_tree_with_root([0; 4]);
-    assert(calculate_empty_tree_root(2) == expected_empty_root_4);
+    let (_, expected_empty_root_4) = create_tree_with_root::<4, Poseidon2Hasher>([0; 4]);
+    assert(calculate_empty_tree_root_poseidon(2) == expected_empty_root_4);
 
-    let (_, expected_empty_root_8) = create_tree_with_root([0; 8]);
-    assert(calculate_empty_tree_root(3) == expected_empty_root_8);
+    let (_, expected_empty_root_8) = create_tree_with_root::<8, Poseidon2Hasher>([0; 8]);
+    assert(calculate_empty_tree_root_poseidon(3) == expected_empty_root_8);
 
-    let (_, expected_empty_root_16) = create_tree_with_root([0; 16]);
-    assert(calculate_empty_tree_root(4) == expected_empty_root_16);
+    let (_, expected_empty_root_16) = create_tree_with_root::<16, Poseidon2Hasher>([0; 16]);
+    assert(calculate_empty_tree_root_poseidon(4) == expected_empty_root_16);
 
-    let (_, expected_empty_root_32) = create_tree_with_root([0; 32]);
-    assert(calculate_empty_tree_root(5) == expected_empty_root_32);
+    let (_, expected_empty_root_32) = create_tree_with_root::<32, Poseidon2Hasher>([0; 32]);
+    assert(calculate_empty_tree_root_poseidon(5) == expected_empty_root_32);
 
-    let (_, expected_empty_root_64) = create_tree_with_root([0; 64]);
-    assert(calculate_empty_tree_root(6) == expected_empty_root_64);
+    let (_, expected_empty_root_64) = create_tree_with_root::<64, Poseidon2Hasher>([0; 64]);
+    assert(calculate_empty_tree_root_poseidon(6) == expected_empty_root_64);
 
-    let (_, expected_empty_root_128) = create_tree_with_root([0; 128]);
-    assert(calculate_empty_tree_root(7) == expected_empty_root_128);
+    let (_, expected_empty_root_128) = create_tree_with_root::<128, Poseidon2Hasher>([0; 128]);
+    assert(calculate_empty_tree_root_poseidon(7) == expected_empty_root_128);
 
-    let (_, expected_empty_root_256) = create_tree_with_root([0; 256]);
-    assert(calculate_empty_tree_root(8) == expected_empty_root_256);
+    let (_, expected_empty_root_256) = create_tree_with_root::<256, Poseidon2Hasher>([0; 256]);
+    assert(calculate_empty_tree_root_poseidon(8) == expected_empty_root_256);
 
-    let (_, expected_empty_root_512) = create_tree_with_root([0; 512]);
-    assert(calculate_empty_tree_root(9) == expected_empty_root_512);
+    let (_, expected_empty_root_512) = create_tree_with_root::<512, Poseidon2Hasher>([0; 512]);
+    assert(calculate_empty_tree_root_poseidon(9) == expected_empty_root_512);
 
-    let (_, expected_empty_root_1024) = create_tree_with_root([0; 1024]);
-    assert(calculate_empty_tree_root(10) == expected_empty_root_1024);
+    let (_, expected_empty_root_1024) = create_tree_with_root::<1024, Poseidon2Hasher>([0; 1024]);
+    assert(calculate_empty_tree_root_poseidon(10) == expected_empty_root_1024);
 }

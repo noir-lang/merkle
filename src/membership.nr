@@ -1,6 +1,7 @@
 use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
 use crate::leaf_preimage::IndexedTreeLeafPreimage;
 use crate::root::compute_root_from_sibling_path;
+use std::hash::Hasher;
 
 #[derive(Eq)]
 pub struct MembershipWitness<let N: u32> {
@@ -8,26 +9,35 @@ pub struct MembershipWitness<let N: u32> {
     pub sibling_path: [Field; N],
 }
 
-pub fn check_membership<let N: u32>(
+pub fn check_membership<let N: u32, H>(
     leaf: Field,
     index: Field,
     sibling_path: [Field; N],
     root: Field,
-) -> bool {
-    let calculated_root = compute_root_from_sibling_path(leaf, index, sibling_path);
+) -> bool
+where
+    H: Hasher + Default,
+{
+    let calculated_root = compute_root_from_sibling_path::<N, H>(leaf, index, sibling_path);
     calculated_root == root
 }
 
-pub fn assert_check_membership<let TREE_HEIGHT: u32>(
+pub fn assert_check_membership<let TREE_HEIGHT: u32, H>(
     leaf: Field,
     index: Field,
     sibling_path: [Field; TREE_HEIGHT],
     root: Field,
-) {
-    assert(check_membership(leaf, index, sibling_path, root), "membership check failed");
+)
+where
+    H: Hasher + Default,
+{
+    assert(
+        check_membership::<TREE_HEIGHT, H>(leaf, index, sibling_path, root),
+        "membership check failed",
+    );
 }
 
-pub fn assert_check_non_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE, VALUE>(
+pub fn assert_check_non_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE, VALUE, H>(
     key: Field,
     low_leaf_preimage: LEAF_PREIMAGE,
     low_leaf_membership_witness: MembershipWitness<TREE_HEIGHT>,
@@ -35,10 +45,11 @@ pub fn assert_check_non_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE, VALUE>(
 )
 where
     LEAF_PREIMAGE: IndexedTreeLeafPreimage<VALUE>,
+    H: Hasher + Default,
 {
     assert_check_valid_low_leaf(key, low_leaf_preimage);
 
-    let low_leaf_exists = check_membership(
+    let low_leaf_exists = check_membership::<TREE_HEIGHT, H>(
         low_leaf_preimage.as_leaf(),
         low_leaf_membership_witness.leaf_index,
         low_leaf_membership_witness.sibling_path,
@@ -49,7 +60,7 @@ where
 
 // Prove either membership or non-membership depending on the value of `exists`.
 // If `exists` == false, `key` is not in the tree, `leaf_preimage` and `membership_witness` are for the low leaf.
-pub fn conditionally_assert_check_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE, VALUE>(
+pub fn conditionally_assert_check_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE, VALUE, H>(
     key: Field,
     exists: bool,
     leaf_preimage: LEAF_PREIMAGE,
@@ -58,6 +69,7 @@ pub fn conditionally_assert_check_membership<let TREE_HEIGHT: u32, LEAF_PREIMAGE
 )
 where
     LEAF_PREIMAGE: IndexedTreeLeafPreimage<VALUE>,
+    H: Hasher + Default,
 {
     if exists {
         assert_eq(key, leaf_preimage.get_key(), "Key does not match the key of the leaf preimage");
@@ -65,7 +77,7 @@ where
         assert_check_valid_low_leaf(key, leaf_preimage);
     }
 
-    assert_check_membership(
+    assert_check_membership::<TREE_HEIGHT, H>(
         leaf_preimage.as_leaf(),
         membership_witness.leaf_index,
         membership_witness.sibling_path,
@@ -84,6 +96,7 @@ mod tests {
         },
         merkle_tree::MerkleTree,
     };
+    use poseidon::poseidon2::Poseidon2Hasher;
 
     struct TestLeafPreimage {
         value: Field,
@@ -143,16 +156,16 @@ mod tests {
         TestLeafPreimage { value: 30, next_value: 40 },
     ];
 
-    fn build_tree() -> MerkleTree<4> {
+    fn build_tree() -> MerkleTree<4, Poseidon2Hasher> {
         let leaves = leaf_preimages.map(|leaf_preimage: TestLeafPreimage| leaf_preimage.as_leaf());
-        MerkleTree::new(leaves)
+        MerkleTree::<4, Poseidon2Hasher>::new(leaves)
     }
 
     fn check_membership_at_index(leaf_index: Field, leaf: Field) -> bool {
         let tree = build_tree();
         let tree_root = tree.get_root();
 
-        check_membership(
+        check_membership::<2, Poseidon2Hasher>(
             leaf,
             leaf_index,
             tree.get_sibling_path::<2>(leaf_index as u32),
@@ -164,7 +177,7 @@ mod tests {
         let tree = build_tree();
         let tree_root = tree.get_root();
 
-        assert_check_membership(
+        assert_check_membership::<2, Poseidon2Hasher>(
             leaf,
             leaf_index,
             tree.get_sibling_path::<2>(leaf_index as u32),
@@ -181,7 +194,7 @@ mod tests {
             TestLeafPreimage { value: 0, next_value: 0 }
         };
 
-        assert_check_non_membership(
+        assert_check_non_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             key,
             leaf_preimage,
             MembershipWitness {
@@ -205,7 +218,7 @@ mod tests {
             TestLeafPreimage { value: 0, next_value: 0 }
         };
 
-        conditionally_assert_check_membership(
+        conditionally_assert_check_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             key,
             exists,
             leaf_preimage,
@@ -265,7 +278,7 @@ mod tests {
         let tree = build_tree();
         let tree_root = 56;
 
-        let res = check_membership(
+        let res = check_membership::<2, Poseidon2Hasher>(
             leaf_preimages[0].as_leaf(),
             0,
             tree.get_sibling_path::<2>(0),
@@ -279,7 +292,7 @@ mod tests {
         let tree = build_tree();
         let tree_root = 56;
 
-        assert_check_membership(
+        assert_check_membership::<2, Poseidon2Hasher>(
             leaf_preimages[0].as_leaf(),
             0,
             tree.get_sibling_path::<2>(0),
@@ -313,7 +326,7 @@ mod tests {
         let tree_root = tree.get_root();
 
         let fake_leaf = TestLeafPreimage { value: 50, next_value: 60 };
-        assert_check_non_membership(
+        assert_check_non_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             55,
             fake_leaf,
             MembershipWitness { leaf_index: 1, sibling_path: tree.get_sibling_path::<2>(1) },
@@ -352,7 +365,7 @@ mod tests {
         let tree_root = tree.get_root();
         let fake_leaf = TestLeafPreimage { value: 50, next_value: 60 };
         let exists = true;
-        conditionally_assert_check_membership(
+        conditionally_assert_check_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             50,
             exists,
             fake_leaf,
@@ -367,7 +380,7 @@ mod tests {
         let tree_root = tree.get_root();
         let fake_leaf = TestLeafPreimage { value: 50, next_value: 60 };
         let exists = false;
-        conditionally_assert_check_membership(
+        conditionally_assert_check_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             55,
             exists,
             fake_leaf,

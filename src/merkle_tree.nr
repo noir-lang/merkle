@@ -1,24 +1,23 @@
-use crate::utils::{accumulate_sha256, merkle_hash};
+use std::hash::Hasher;
 
+// Note: `N` must be a power of 2.
 #[derive(Eq)]
-pub struct MerkleTree<let N: u32> {
+pub struct MerkleTree<let N: u32, H> {
     pub leaves: [Field; N],
     // nodes are the internal nodes of the Merkle tree, excluding the leaves
     pub nodes: [Field; N - 1],
 }
 
-impl<let N: u32> MerkleTree<N> {
+impl<let N: u32, H> MerkleTree<N, H> {
     pub fn empty() -> Self {
         MerkleTree { leaves: [0; N], nodes: [0; N - 1] }
     }
 
-    pub fn new(leaves: [Field; N]) -> Self {
-        let nodes = compute_merkle_tree_nodes(leaves, merkle_hash);
-        MerkleTree { leaves, nodes }
-    }
-
-    pub fn new_sha(leaves: [Field; N]) -> Self {
-        let nodes = compute_merkle_tree_nodes(leaves, accumulate_sha256);
+    pub fn new(leaves: [Field; N]) -> Self
+    where
+        H: Hasher + Default,
+    {
+        let nodes = Self::compute_merkle_tree_nodes(leaves);
         MerkleTree { leaves, nodes }
     }
 
@@ -62,27 +61,36 @@ impl<let N: u32> MerkleTree<N> {
 
         path
     }
+
+    fn compute_merkle_tree_nodes(leaves: [Field; N]) -> [Field; N - 1]
+    where
+        H: Hasher + Default,
+    {
+        let mut nodes = [0; N - 1];
+
+        let total_nodes = N - 1;
+        let half_size = N / 2;
+
+        // Hash base layer.
+        for i in 0..half_size {
+            nodes[i] = hash_nodes::<H>(leaves[2 * i], leaves[2 * i + 1]);
+        }
+
+        // Hash the other layers.
+        for i in 0..(total_nodes - half_size) {
+            nodes[half_size + i] = hash_nodes::<H>(nodes[2 * i], nodes[2 * i + 1]);
+        }
+
+        nodes
+    }
 }
 
-// Note: `N` must be a power of 2.
-fn compute_merkle_tree_nodes<let N: u32>(
-    leaves: [Field; N],
-    hasher: fn(Field, Field) -> Field,
-) -> [Field; N - 1] {
-    let mut nodes = [0; N - 1];
-
-    let total_nodes = N - 1;
-    let half_size = N / 2;
-
-    // Hash base layer.
-    for i in 0..half_size {
-        nodes[i] = hasher(leaves[2 * i], leaves[2 * i + 1]);
-    }
-
-    // Hash the other layers.
-    for i in 0..(total_nodes - half_size) {
-        nodes[half_size + i] = hasher(nodes[2 * i], nodes[2 * i + 1]);
-    }
-
-    nodes
+pub fn hash_nodes<H>(left: Field, right: Field) -> Field
+where
+    H: Hasher + Default,
+{
+    let mut hasher: H = H::default();
+    hasher.write(left);
+    hasher.write(right);
+    hasher.finish()
 }
