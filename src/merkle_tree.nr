@@ -95,11 +95,10 @@ where
     hasher.finish()
 }
 
-
 mod tests {
+    use crate::merkle_tree::hash_nodes;
     use crate::{merkle_tree::MerkleTree, utils::poseidon2_hash};
     use poseidon::poseidon2::Poseidon2Hasher;
-    use crate::merkle_tree::hash_nodes;
 
     #[test]
     fn test_hash_nodes(val1: Field, val2: Field) {
@@ -122,7 +121,7 @@ mod tests {
     fn test_compute_nodes_size_8() {
         let tree = MerkleTree::<8, Poseidon2Hasher>::new([1, 2, 3, 4, 5, 6, 7, 8]);
         assert_eq(tree.nodes.len(), 7);
-        
+
         // base layer: nodes[0..4]
         let expected_hash_12 = poseidon2_hash(1, 2);
         let expected_hash_34 = poseidon2_hash(3, 4);
@@ -132,21 +131,20 @@ mod tests {
         assert_eq(tree.nodes[1], expected_hash_34);
         assert_eq(tree.nodes[2], expected_hash_56);
         assert_eq(tree.nodes[3], expected_hash_78);
-        
+
         // upper layer: nodes[4..7]
         // nodes[4] = hash(nodes[0], nodes[1]) = hash(hash(1,2), hash(3,4))
         let expected_hash_left = poseidon2_hash(expected_hash_12, expected_hash_34);
         assert_eq(tree.nodes[4], expected_hash_left);
-        
+
         // nodes[5] = hash(nodes[2], nodes[3]) = hash(hash(5,6), hash(7,8))
         let expected_hash_right = poseidon2_hash(expected_hash_56, expected_hash_78);
         assert_eq(tree.nodes[5], expected_hash_right);
-        
+
         // nodes[6] = hash(nodes[4], nodes[5]) = root
         let expected_root = poseidon2_hash(expected_hash_left, expected_hash_right);
         assert_eq(tree.nodes[6], expected_root);
     }
-
 
     // test empty tree
     #[test]
@@ -174,7 +172,6 @@ mod tests {
         let expected_root = poseidon2_hash(expected_hash_left, expected_hash_right);
         assert_eq(root, expected_root);
     }
-
 
     // test that root is at the correct index (N - 2)
     #[test]
@@ -214,8 +211,6 @@ mod tests {
         assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(7), 6); // odd -> -1
     }
 
-
-
     #[test]
     fn test_sibling_index_symmetry_size_16() {
         for i in 0..16 {
@@ -243,8 +238,7 @@ mod tests {
         assert_eq(sibling_path2[0], 1);
     }
 
-
-    // test for N=4 
+    // test for N=4
     #[test]
     fn test_get_sibling_path_size_4_leaf_0() {
         let tree = MerkleTree::<4, Poseidon2Hasher>::new([1, 2, 3, 4]);
@@ -269,24 +263,24 @@ mod tests {
         let leaves = [100, 200, 300, 400];
         let tree = MerkleTree::<4, Poseidon2Hasher>::new(leaves);
         let root = tree.get_root();
-        
+
         // for each leaf, get its sibling path and verify it can reconstruct the root
         for i in 0..4 {
             let sibling_path = tree.get_sibling_path::<2>(i);
             let leaf = leaves[i];
-            
+
             let level0_hash = if i % 2 == 0 {
                 poseidon2_hash(leaf, sibling_path[0])
             } else {
                 poseidon2_hash(sibling_path[0], leaf)
             };
-            
+
             let level1_hash = if (i / 2) % 2 == 0 {
                 poseidon2_hash(level0_hash, sibling_path[1])
             } else {
                 poseidon2_hash(sibling_path[1], level0_hash)
             };
-            
+
             assert_eq(level1_hash, root, "Sibling path should reconstruct root");
         }
     }
