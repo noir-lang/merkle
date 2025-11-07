@@ -228,7 +228,7 @@ mod tests {
 
     // test for smallest tree N = 2
     #[test]
-    fn test_get_sibling_path_size_2_leaf_0() {
+    fn test_get_sibling_path_size_2_leaf() {
         let tree = MerkleTree::<2, Poseidon2Hasher>::new([1, 2]);
         let sibling_path = tree.get_sibling_path::<1>(0);
         // For leaf 0, sibling is leaf 1
@@ -240,7 +240,7 @@ mod tests {
 
     // test for N=4
     #[test]
-    fn test_get_sibling_path_size_4_leaf_0() {
+    fn test_get_sibling_path_size_4_leaf() {
         let tree = MerkleTree::<4, Poseidon2Hasher>::new([1, 2, 3, 4]);
         let expected_hash_12 = poseidon2_hash(1, 2);
         let expected_hash_34 = poseidon2_hash(3, 4);
