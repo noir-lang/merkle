@@ -101,6 +101,7 @@ mod tests {
     struct TestLeafPreimage {
         value: Field,
         next_value: Field,
+        next_index: Field,
     }
 
     impl LeafPreimage for TestLeafPreimage {
@@ -109,7 +110,7 @@ mod tests {
         }
 
         fn as_leaf(self) -> Field {
-            pedersen_hash([self.value])
+            pedersen_hash([self.next_index, self.value, self.next_value])
         }
     }
 
@@ -129,15 +130,15 @@ mod tests {
         }
 
         fn update_pointers(self, next_value: Field, _next_index: u32) -> Self {
-            Self { value: self.value, next_value }
+            Self { value: self.value, next_index: _next_index as Field, next_value }
         }
 
         fn update_value(self, value: Field) -> Self {
-            Self { value, next_value: self.next_value }
+            Self { value, next_index: self.next_index, next_value: self.next_value }
         }
 
         fn build_insertion_leaf(value: Field, low_leaf: Self) -> Self {
-            Self { value, next_value: low_leaf.next_value }
+            Self { value, next_index: low_leaf.next_index, next_value: low_leaf.next_value }
         }
 
         fn is_empty(self) -> bool {
@@ -145,15 +146,15 @@ mod tests {
         }
 
         fn empty() -> Self {
-            Self { value: 0, next_value: 0 }
+            Self { value: 0, next_index: 0, next_value: 0 }
         }
     }
 
     global leaf_preimages: [TestLeafPreimage; 4] = [
-        TestLeafPreimage { value: 20, next_value: 30 },
-        TestLeafPreimage { value: 40, next_value: 0 },
-        TestLeafPreimage { value: 10, next_value: 20 },
-        TestLeafPreimage { value: 30, next_value: 40 },
+        TestLeafPreimage { value: 20, next_index: 3, next_value: 30 },
+        TestLeafPreimage { value: 40, next_index: 2, next_value: 0 },
+        TestLeafPreimage { value: 10, next_index: 0, next_value: 20 },
+        TestLeafPreimage { value: 30, next_index: 1, next_value: 40 },
     ];
 
     fn build_tree() -> MerkleTree<4, Poseidon2Hasher> {
@@ -191,7 +192,7 @@ mod tests {
         let leaf_preimage = if low_leaf_index as u32 < leaf_preimages.len() {
             leaf_preimages[low_leaf_index]
         } else {
-            TestLeafPreimage { value: 0, next_value: 0 }
+            TestLeafPreimage { value: 0, next_index: 0, next_value: 0 }
         };
 
         assert_check_non_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
@@ -215,7 +216,7 @@ mod tests {
         let leaf_preimage = if low_leaf_index as u32 < leaf_preimages.len() {
             leaf_preimages[low_leaf_index]
         } else {
-            TestLeafPreimage { value: 0, next_value: 0 }
+            TestLeafPreimage { value: 0, next_index: 0, next_value: 0 }
         };
 
         conditionally_assert_check_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
@@ -325,7 +326,7 @@ mod tests {
         let tree = build_tree();
         let tree_root = tree.get_root();
 
-        let fake_leaf = TestLeafPreimage { value: 50, next_value: 60 };
+        let fake_leaf = TestLeafPreimage { value: 50, next_index: 1, next_value: 60 };
         assert_check_non_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             55,
             fake_leaf,
@@ -363,7 +364,7 @@ mod tests {
     fn test_conditionally_assert_check_membership_failed_exists_invalid_leaf() {
         let tree = build_tree();
         let tree_root = tree.get_root();
-        let fake_leaf = TestLeafPreimage { value: 50, next_value: 60 };
+        let fake_leaf = TestLeafPreimage { value: 50, next_index: 1, next_value: 60 };
         let exists = true;
         conditionally_assert_check_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             50,
@@ -378,7 +379,7 @@ mod tests {
     fn test_conditionally_assert_check_membership_failed_not_exists_invalid_leaf() {
         let tree = build_tree();
         let tree_root = tree.get_root();
-        let fake_leaf = TestLeafPreimage { value: 50, next_value: 60 };
+        let fake_leaf = TestLeafPreimage { value: 50, next_index: 1, next_value: 60 };
         let exists = false;
         conditionally_assert_check_membership::<2, TestLeafPreimage, Field, Poseidon2Hasher>(
             55,
