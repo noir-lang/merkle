@@ -201,14 +201,12 @@ mod tests {
     // test for N=8
     #[test]
     fn test_sibling_index_size_8_all_indices() {
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(0), 1); // even -> +1
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(1), 0); // odd -> -1
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(2), 3); // even -> +1
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(3), 2); // odd -> -1
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(4), 5); // even -> +1
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(5), 4); // odd -> -1
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(6), 7); // even -> +1
-        assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(7), 6); // odd -> -1
+        for i in 0..4 {
+            let even_sibling_index = 2*i;
+            let odd_sibling_index = 2*i + 1;
+            assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(even_sibling_index), odd_sibling_index); // even -> +1
+            assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(odd_sibling_index), even_sibling_index); // odd -> -1
+        }
     }
 
     #[test]
