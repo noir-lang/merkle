@@ -202,10 +202,16 @@ mod tests {
     #[test]
     fn test_sibling_index_size_8_all_indices() {
         for i in 0..4 {
-            let even_sibling_index = 2*i;
-            let odd_sibling_index = 2*i + 1;
-            assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(even_sibling_index), odd_sibling_index); // even -> +1
-            assert_eq(MerkleTree::<8, Poseidon2Hasher>::sibling_index(odd_sibling_index), even_sibling_index); // odd -> -1
+            let even_sibling_index = 2 * i;
+            let odd_sibling_index = 2 * i + 1;
+            assert_eq(
+                MerkleTree::<8, Poseidon2Hasher>::sibling_index(even_sibling_index),
+                odd_sibling_index,
+            ); // even -> +1
+            assert_eq(
+                MerkleTree::<8, Poseidon2Hasher>::sibling_index(odd_sibling_index),
+                even_sibling_index,
+            ); // odd -> -1
         }
     }
 
