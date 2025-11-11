@@ -289,4 +289,17 @@ mod tests {
         }
     }
 
+    #[export]
+    fn test(leaves: [Field; 4]) -> Field {
+        let mut level0_hash = 0;
+        for i in 0..4 {
+            level0_hash = if i % 2 == 0 {
+                leaves[i] * 10
+            } else {
+                leaves[i + 1] * 11
+            };
+        }
+        level0_hash
+    }
+
 }
