@@ -273,17 +273,20 @@ mod tests {
             let sibling_path = tree.get_sibling_path::<2>(i);
             let leaf = leaves[i];
 
-            let level0_hash = if i % 2 == 0 {
-                poseidon2_hash(leaf, sibling_path[0])
+            let (level0_hash_left, level0_hash_right) = if i % 2 == 0 {
+                (leaf, sibling_path[0])
             } else {
-                poseidon2_hash(sibling_path[0], leaf)
+                (sibling_path[0], leaf)
             };
 
-            let level1_hash = if (i / 2) % 2 == 0 {
-                poseidon2_hash(level0_hash, sibling_path[1])
+            let level0_hash = poseidon2_hash(level0_hash_left, level0_hash_right);
+
+            let (level1_hash_left, level1_hash_right) = if (i / 2) % 2 == 0 {
+                (level0_hash, sibling_path[1])
             } else {
-                poseidon2_hash(sibling_path[1], level0_hash)
+                (sibling_path[1], level0_hash)
             };
+            let level1_hash = poseidon2_hash(level1_hash_left, level1_hash_right);
 
             assert_eq(level1_hash, root, "Sibling path should reconstruct root");
         }
