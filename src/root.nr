@@ -91,39 +91,12 @@ pub fn calculate_empty_tree_root_poseidon(depth: u32) -> Field {
 
 #[test]
 fn test_calculate_empty_tree_root() {
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(0) == calculate_empty_tree_root_poseidon(0),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(1) == calculate_empty_tree_root_poseidon(1),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(2) == calculate_empty_tree_root_poseidon(2),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(3) == calculate_empty_tree_root_poseidon(3),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(4) == calculate_empty_tree_root_poseidon(4),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(5) == calculate_empty_tree_root_poseidon(5),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(6) == calculate_empty_tree_root_poseidon(6),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(7) == calculate_empty_tree_root_poseidon(7),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(8) == calculate_empty_tree_root_poseidon(8),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(9) == calculate_empty_tree_root_poseidon(9),
-    );
-    assert(
-        calculate_empty_tree_root::<Poseidon2Hasher>(10) == calculate_empty_tree_root_poseidon(10),
-    );
+    for depth in 0..11 {
+        assert(
+            calculate_empty_tree_root::<Poseidon2Hasher>(depth)
+                == calculate_empty_tree_root_poseidon(depth),
+        );
+    }
 }
 
 #[test]
@@ -175,35 +148,15 @@ fn test_empty_subroot() {
     assert(calculate_empty_tree_root_poseidon(10) == expected_empty_root_1024);
 }
 
-#[test]
-fn test_compute_root_from_sibling_path_size_2() {
-    // Smallest tree: N=2, depth=1
-    let leaves = [1, 2];
-    let tree = MerkleTree::<2, Poseidon2Hasher>::new(leaves);
-    let root = tree.get_root();
-    for i in 0..2 {
-        let sibling_path = tree.get_sibling_path::<1>(i);
-
-        let computed_root = compute_root_from_sibling_path::<1, Poseidon2Hasher>(
-            leaves[i],
-            i as Field,
-            sibling_path,
-        );
-        assert_eq(computed_root, root);
-    }
-}
-
-#[test]
-fn test_compute_root_from_sibling_path_size_16() {
-    // N = 16, depth = 4
-    let leaves = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160];
-    let tree = MerkleTree::<16, Poseidon2Hasher>::new(leaves);
+/// helper function to test that compute_root_from_sibling_path correctly reconstructs
+/// the root for all leaves in a tree
+fn test_compute_root_from_sibling_path_helper<let N: u32, let K: u32>(leaves: [Field; N]) {
+    let tree = MerkleTree::<N, Poseidon2Hasher>::new(leaves);
     let root = tree.get_root();
 
-    // test all leaves
-    for i in 0..16 {
-        let sibling_path = tree.get_sibling_path::<4>(i);
-        let computed_root = compute_root_from_sibling_path::<4, Poseidon2Hasher>(
+    for i in 0..N {
+        let sibling_path = tree.get_sibling_path::<K>(i);
+        let computed_root = compute_root_from_sibling_path::<K, Poseidon2Hasher>(
             leaves[i],
             i as Field,
             sibling_path,
@@ -213,20 +166,21 @@ fn test_compute_root_from_sibling_path_size_16() {
 }
 
 #[test]
+fn test_compute_root_from_sibling_path_size_2() {
+    // smallest tree: N=2, depth=1
+    test_compute_root_from_sibling_path_helper::<2, 1>([1, 2]);
+}
+
+#[test]
+fn test_compute_root_from_sibling_path_size_16() {
+    // N = 16, depth = 4
+    test_compute_root_from_sibling_path_helper::<16, 4>([
+        10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160,
+    ]);
+}
+
+#[test]
 fn test_compute_root_from_sibling_path_empty_tree_size_4() {
     // empty tree: all zeros
-    let leaves = [0; 4];
-    let tree = MerkleTree::<4, Poseidon2Hasher>::new(leaves);
-    let root = tree.get_root();
-
-    // test all leaves in empty tree
-    for i in 0..4 {
-        let sibling_path = tree.get_sibling_path::<2>(i);
-        let computed_root = compute_root_from_sibling_path::<2, Poseidon2Hasher>(
-            leaves[i],
-            i as Field,
-            sibling_path,
-        );
-        assert_eq(computed_root, root, f"Failed for leaf index {i} in empty tree");
-    }
+    test_compute_root_from_sibling_path_helper::<4, 2>([0; 4]);
 }
