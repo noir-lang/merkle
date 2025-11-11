@@ -101,7 +101,7 @@ mod tests {
     struct TestLeafPreimage {
         value: Field,
         next_value: Field,
-        next_index: Field,
+        next_index: u32,
     }
 
     impl LeafPreimage for TestLeafPreimage {
@@ -110,7 +110,7 @@ mod tests {
         }
 
         fn as_leaf(self) -> Field {
-            pedersen_hash([self.next_index, self.value, self.next_value])
+            pedersen_hash([self.next_index as Field, self.value, self.next_value])
         }
     }
 
@@ -130,7 +130,7 @@ mod tests {
         }
 
         fn update_pointers(self, next_value: Field, _next_index: u32) -> Self {
-            Self { value: self.value, next_index: _next_index as Field, next_value }
+            Self { value: self.value, next_index: _next_index, next_value }
         }
 
         fn update_value(self, value: Field) -> Self {
