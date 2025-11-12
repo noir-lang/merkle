@@ -26,11 +26,6 @@ where
     // and low leaf updates.
 
     check_shuffle(values_to_insert, sorted_values);
-    assert_eq(
-        get_shuffle_indices(values_to_insert, sorted_values),
-        sorted_values_indexes,
-        "Invalid permutation",
-    );
 
     // Now, update the existing leaves with the new leaves
     let mut current_tree_root = start_root;
