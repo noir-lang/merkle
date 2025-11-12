@@ -11,7 +11,6 @@ pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u
     start_next_available_leaf_index: u64,
     values_to_insert: [Value; SubtreeWidth],
     sorted_values: [Value; SubtreeWidth],
-    sorted_values_indexes: [u32; SubtreeWidth],
     new_subtree_sibling_path: [Field; SiblingPathLength],
     low_leaf_preimages: [Leaf; SubtreeWidth],
     low_leaf_membership_witnesses: [MembershipWitness<TreeHeight>; SubtreeWidth],
@@ -26,6 +25,7 @@ where
     // and low leaf updates.
 
     check_shuffle(values_to_insert, sorted_values);
+    let sorted_values_indexes = get_shuffle_indices(values_to_insert, sorted_values);
 
     // Now, update the existing leaves with the new leaves
     let mut current_tree_root = start_root;
