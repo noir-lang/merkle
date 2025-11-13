@@ -67,7 +67,7 @@ impl<let N: u32, H> MerkleTree<N, H> {
         path
     }
 
-    pub fn compute_merkle_tree_nodes(leaves: [Field; N]) -> [Field; N - 1]
+    fn compute_merkle_tree_nodes(leaves: [Field; N]) -> [Field; N - 1]
     where
         H: Hasher + Default,
     {
