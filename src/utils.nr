@@ -43,7 +43,7 @@ where
     H: Hasher + Default,
 {
     let sibling_path = tree.get_sibling_path::<K>(leaf_index);
-    MembershipWitness { leaf_index: leaf_index as Field, sibling_path }
+    MembershipWitness { node_index: leaf_index as Field, sibling_path }
 }
 
 /// Verify a leaf exists in a tree using a membership witness
@@ -55,7 +55,7 @@ pub fn verify_membership<let K: u32, H>(
 where
     H: Hasher + Default,
 {
-    check_membership::<K, H>(leaf, witness.leaf_index, witness.sibling_path, root)
+    check_membership::<K, H>(leaf, witness.node_index, witness.sibling_path, root)
 }
 
 /// Create a tree, generate a membership proof, and verify it

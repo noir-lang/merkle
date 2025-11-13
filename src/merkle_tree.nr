@@ -9,8 +9,13 @@ pub struct MerkleTree<let N: u32, H> {
 }
 
 impl<let N: u32, H> MerkleTree<N, H> {
-    pub fn empty() -> Self {
-        MerkleTree { leaves: [0; N], nodes: [0; N - 1] }
+    pub fn empty() -> Self
+    where
+        H: Hasher + Default,
+    {
+        let leaves = [0; N];
+        let nodes = Self::compute_merkle_tree_nodes(leaves);
+        MerkleTree { leaves, nodes }
     }
 
     pub fn new(leaves: [Field; N]) -> Self
@@ -62,7 +67,7 @@ impl<let N: u32, H> MerkleTree<N, H> {
         path
     }
 
-    fn compute_merkle_tree_nodes(leaves: [Field; N]) -> [Field; N - 1]
+    pub fn compute_merkle_tree_nodes(leaves: [Field; N]) -> [Field; N - 1]
     where
         H: Hasher + Default,
     {
