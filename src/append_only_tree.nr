@@ -65,7 +65,7 @@ pub mod tests {
     use crate::utils::poseidon2_hash;
     use poseidon::poseidon2::Poseidon2Hasher;
 
-    /// build a partialtree with the first `num_filled` leaves set to values, rest are zeros
+    /// build a partial tree with the first `num_filled` leaves set to values, rest are zeros
     fn build_partial_tree<let N: u32>(
         leaves: [Field; N],
         num_filled: u32,
@@ -77,9 +77,7 @@ pub mod tests {
         MerkleTree::<N, Poseidon2Hasher>::new(arr)
     }
 
-    /// Get sibling path of a subtree root in the tree
-    ///
-    /// Given a subtree at depth `SubtreeHeight`, this function returns the sibling path
+    /// Get sibling path of a subtree root in the tree, given a subtree at depth `SubtreeHeight`, this function returns the sibling path
     /// from that subtree root to the tree root.
     fn get_subtree_root_sibling_path<let NumLeaves: u32, let TreeHeight: u32, let SubtreeHeight: u32>(
         leaves: [Field; NumLeaves],
@@ -98,7 +96,7 @@ pub mod tests {
         path
     }
 
-    /// Insert a leaf and verify the result matches expected tree state
+    /// insert a leaf and verify the result matches expected tree state
     fn insert_leaf_and_verify<let NumLeaves: u32, let TreeHeight: u32>(
         current_root: Field,
         next_index: u64,
@@ -118,7 +116,7 @@ pub mod tests {
             leaf_to_insert,
         );
 
-        // Verify root matches expected tree (inserting a leaf adds 1)
+        // verify root matches expected tree (inserting a leaf adds 1)
         let expected_num_filled = (next_index + 1) as u32;
         let expected_tree = build_partial_tree::<NumLeaves>(leaves, expected_num_filled);
         let expected_root = expected_tree.get_root();
@@ -128,7 +126,7 @@ pub mod tests {
         (new_root, new_next_index)
     }
 
-    /// Insert a subtree and verify the result matches expected tree state
+    /// insert a subtree and verify the result matches expected tree state
     fn insert_subtree_and_verify<let NumLeaves: u32, let TreeHeight: u32, let SubtreeHeight: u32>(
         current_root: Field,
         next_index: u64,
@@ -148,7 +146,7 @@ pub mod tests {
             subtree_root,
         );
 
-        // Verify root matches expected tree (inserting a subtree of depth SubtreeHeight adds 2^SubtreeHeight leaves)
+        // verify root matches expected tree (inserting a subtree of depth SubtreeHeight adds 2^SubtreeHeight leaves)
         let expected_num_filled = (next_index + (1 << (SubtreeHeight as u64))) as u32;
         let expected_tree = build_partial_tree::<NumLeaves>(leaves, expected_num_filled);
         let expected_root = expected_tree.get_root();
