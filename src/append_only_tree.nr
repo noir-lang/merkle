@@ -176,8 +176,7 @@ pub mod tests {
         let tree_after_first = build_partial_tree::<4>(leaves, 1);
         let root_after_first = tree_after_first.get_root();
 
-        let (_, _) =
-            insert_leaf_and_verify::<4, 2>(root_after_first, 1, leaves, 1, leaves[1]);
+        let (_, _) = insert_leaf_and_verify::<4, 2>(root_after_first, 1, leaves, 1, leaves[1]);
     }
 
     #[test]
@@ -213,13 +212,7 @@ pub mod tests {
         let subtree_root = poseidon2_hash(subtree_leaf1, subtree_leaf2);
         let leaves = [subtree_leaf1, subtree_leaf2, 0, 0];
 
-        let (_, _) = insert_subtree_and_verify::<4, 2, 1>(
-            empty_root,
-            0,
-            leaves,
-            0,
-            subtree_root,
-        );
+        let (_, _) = insert_subtree_and_verify::<4, 2, 1>(empty_root, 0, leaves, 0, subtree_root);
     }
 
     // Testing that inserting a subtree with 2 leaves after inserting 1 leaf is invalid because
