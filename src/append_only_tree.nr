@@ -29,7 +29,6 @@ pub fn insert_subtree_to_snapshot_tree<let TreeHeight: u32, let SubtreeHeight: u
 where
     H: Hasher + Default,
 {
-    assert(SubtreeHeight < TreeHeight, "Subtree depth must be less than tree height");
     assert(
         next_available_leaf_index % (SubtreeHeight + 1) as u64 == 0,
         "Next available leaf index not valid",
