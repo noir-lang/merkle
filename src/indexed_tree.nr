@@ -15,7 +15,7 @@ pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SubtreeHeight: u32, 
     new_subtree_sibling_path: [Field; TreeHeight - SubtreeHeight],
     low_leaf_preimages: [Leaf; SubtreeWidth],
     low_leaf_membership_witnesses: [MembershipWitness<TreeHeight>; SubtreeWidth],
-) -> (Field, u64)
+) -> (Field, u32)
 where
     Value: IndexedTreeLeafValue,
     Leaf: IndexedTreeLeafPreimage<Value>,
@@ -91,7 +91,7 @@ where
     }
 
     let empty_subtree_root = calculate_empty_tree_root::<H>(SubtreeHeight);
-    let leaf_index_subtree_depth = (start_insertion_index >> (SubtreeHeight as u64)) as u32;
+    let leaf_index_subtree_depth = start_insertion_index >> SubtreeHeight;
 
     assert_check_membership::<TreeHeight - SubtreeHeight, H>(
         empty_subtree_root,
@@ -106,14 +106,14 @@ where
 
     // Calculate the new root
     // We are inserting a subtree rather than a full tree here
-    let subtree_index = (start_insertion_index >> (SubtreeHeight as u64)) as u32;
+    let subtree_index = start_insertion_index >> SubtreeHeight;
     let new_root = compute_root_from_sibling_path::<TreeHeight - SubtreeHeight, H>(
         subtree_root,
         subtree_index as Field,
         new_subtree_sibling_path,
     );
 
-    (new_root, start_insertion_index + (values_to_insert.len() as u64))
+    (new_root, start_insertion_index + values_to_insert.len())
 }
 
 pub fn insert<Value, Leaf, let TreeHeight: u32, H>(
