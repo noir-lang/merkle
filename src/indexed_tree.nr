@@ -5,13 +5,14 @@ use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
 use crate::utils::{check_permutation, create_tree_with_root};
 use std::hash::Hasher;
-pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32, H>(
+pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SubtreeHeight: u32, let TreeHeight: u32, H>(
     start_root: Field,
-    start_next_available_leaf_index: u64,
+    start_next_available_leaf_index: u32,
     values_to_insert: [Value; SubtreeWidth],
     sorted_values: [Value; SubtreeWidth],
+    // sorted in DESCENDING order
     sorted_values_indexes: [u32; SubtreeWidth],
-    new_subtree_sibling_path: [Field; SiblingPathLength],
+    new_subtree_sibling_path: [Field; TreeHeight - SubtreeHeight],
     low_leaf_preimages: [Leaf; SubtreeWidth],
     low_leaf_membership_witnesses: [MembershipWitness<TreeHeight>; SubtreeWidth],
 ) -> (Field, u64)
@@ -24,6 +25,11 @@ where
     // However, for the actual insertion in the tree the original order is respected, the sorting is only used for validation of the links
     // and low leaf updates.
     check_permutation(values_to_insert, sorted_values, sorted_values_indexes);
+
+    assert(
+        start_next_available_leaf_index % SubtreeWidth == 0,
+        "Start next available leaf index must be a multiple of the subtree width",
+    );
 
     // Now, update the existing leaves with the new leaves
     let mut current_tree_root = start_root;
@@ -87,7 +93,7 @@ where
     let empty_subtree_root = calculate_empty_tree_root::<H>(SubtreeHeight);
     let leaf_index_subtree_depth = (start_insertion_index >> (SubtreeHeight as u64)) as u32;
 
-    assert_check_membership::<SiblingPathLength, H>(
+    assert_check_membership::<TreeHeight - SubtreeHeight, H>(
         empty_subtree_root,
         leaf_index_subtree_depth as Field,
         new_subtree_sibling_path,
@@ -101,7 +107,7 @@ where
     // Calculate the new root
     // We are inserting a subtree rather than a full tree here
     let subtree_index = (start_insertion_index >> (SubtreeHeight as u64)) as u32;
-    let new_root = compute_root_from_sibling_path::<SiblingPathLength, H>(
+    let new_root = compute_root_from_sibling_path::<TreeHeight - SubtreeHeight, H>(
         subtree_root,
         subtree_index as Field,
         new_subtree_sibling_path,
