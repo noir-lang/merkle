@@ -5,10 +5,10 @@ use std::hash::Hasher;
 
 pub fn insert_leaf_to_snapshot_tree<let TreeHeight: u32, H>(
     current_root: Field,
-    next_available_leaf_index: u64,
+    next_available_leaf_index: u32,
     sibling_path: [Field; TreeHeight],
     leaf_to_insert: Field,
-) -> (Field, u64)
+) -> (Field, u32)
 where
     H: Hasher + Default,
 {
@@ -22,18 +22,18 @@ where
 
 pub fn insert_subtree_to_snapshot_tree<let TreeHeight: u32, let SubtreeHeight: u32, H>(
     current_root: Field,
-    next_available_leaf_index: u64,
+    next_available_leaf_index: u32,
     sibling_path: [Field; TreeHeight - SubtreeHeight],
     subtree_root_to_insert: Field,
-) -> (Field, u64)
+) -> (Field, u32)
 where
     H: Hasher + Default,
 {
     assert(
-        next_available_leaf_index % (SubtreeHeight + 1) as u64 == 0,
+        next_available_leaf_index % (1 << SubtreeHeight) == 0,
         "Next available leaf index not valid",
     );
-    let leaf_index_at_depth = (next_available_leaf_index >> (SubtreeHeight as u64)) as u32;
+    let leaf_index_at_depth = (next_available_leaf_index >> SubtreeHeight) as u32;
 
     let empty_subtree_root = calculate_empty_tree_root::<H>(SubtreeHeight);
 
@@ -53,8 +53,7 @@ where
     );
 
     // 2^SubtreeHeight is the number of leaves added. 2^x = 1 << x
-    let new_next_available_leaf_index = next_available_leaf_index + (1 << (SubtreeHeight as u64));
-
+    let new_next_available_leaf_index = next_available_leaf_index + (1 << SubtreeHeight);
     (new_root, new_next_available_leaf_index)
 }
 
@@ -99,11 +98,11 @@ pub mod tests {
     /// insert a leaf and verify the result matches expected tree state
     fn insert_leaf_and_verify<let NumLeaves: u32, let TreeHeight: u32>(
         current_root: Field,
-        next_index: u64,
+        next_index: u32,
         leaves: [Field; NumLeaves],
         leaf_index: u32,
         leaf_to_insert: Field,
-    ) -> (Field, u64) {
+    ) -> (Field, u32) {
         let sibling_path = get_subtree_root_sibling_path::<NumLeaves, TreeHeight, 0>(
             leaves,
             next_index as u32,
@@ -121,7 +120,7 @@ pub mod tests {
         let expected_tree = build_partial_tree::<NumLeaves>(leaves, expected_num_filled);
         let expected_root = expected_tree.get_root();
         assert_eq(new_root, expected_root);
-        assert_eq(new_next_index, expected_num_filled as u64);
+        assert_eq(new_next_index, expected_num_filled);
 
         (new_root, new_next_index)
     }
@@ -129,11 +128,11 @@ pub mod tests {
     /// insert a subtree and verify the result matches expected tree state
     fn insert_subtree_and_verify<let NumLeaves: u32, let TreeHeight: u32, let SubtreeHeight: u32>(
         current_root: Field,
-        next_index: u64,
+        next_index: u32,
         leaves: [Field; NumLeaves],
         leaf_index: u32,
         subtree_root: Field,
-    ) -> (Field, u64) {
+    ) -> (Field, u32) {
         let sibling_path = get_subtree_root_sibling_path::<NumLeaves, TreeHeight, SubtreeHeight>(
             leaves,
             next_index as u32,
@@ -147,11 +146,11 @@ pub mod tests {
         );
 
         // verify root matches expected tree (inserting a subtree of depth SubtreeHeight adds 2^SubtreeHeight leaves)
-        let expected_num_filled = (next_index + (1 << (SubtreeHeight as u64))) as u32;
+        let expected_num_filled = next_index + (1 << SubtreeHeight);
         let expected_tree = build_partial_tree::<NumLeaves>(leaves, expected_num_filled);
         let expected_root = expected_tree.get_root();
         assert_eq(new_root, expected_root);
-        assert_eq(new_next_index, expected_num_filled as u64);
+        assert_eq(new_next_index, expected_num_filled);
 
         (new_root, new_next_index)
     }
@@ -184,7 +183,7 @@ pub mod tests {
         let empty_root = calculate_empty_tree_root::<Poseidon2Hasher>(tree_height);
 
         let mut current_root = empty_root;
-        let mut next_index: u64 = 0;
+        let mut next_index: u32 = 0;
 
         for i in 0..4 {
             let (new_root, new_next_index) = insert_leaf_and_verify::<4, 2>(
