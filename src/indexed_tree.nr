@@ -4,7 +4,9 @@ use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
 use crate::utils::{check_permutation, create_tree_with_root};
+use check_valid_low_leaf::assert_check_valid_low_leaf;
 use std::hash::Hasher;
+
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SubtreeHeight: u32, let TreeHeight: u32, H>(
     start_root: Field,
     start_next_available_leaf_index: u32,
@@ -46,15 +48,11 @@ where
             assert(!low_leaf_preimage.is_empty(), "Empty low leaf");
             let value_key = value.get_key();
             let low_leaf_key = low_leaf_preimage.get_key();
-            let low_leaf_next_key = low_leaf_preimage.get_next_key();
             let is_update = value_key == low_leaf_key;
 
-            let is_less_than_slot = low_leaf_key.lt(value_key);
-            let is_next_greater_than = value_key.lt(low_leaf_next_key);
-            let is_in_range =
-                is_less_than_slot & (is_next_greater_than | low_leaf_preimage.points_to_infinity());
-
-            assert(is_update | is_in_range, "Invalid low leaf");
+            if !is_update {
+                assert_check_valid_low_leaf(value_key, low_leaf_preimage);
+            }
 
             // perform membership check for the low leaf against the original root
             assert_check_membership::<TreeHeight, H>(
