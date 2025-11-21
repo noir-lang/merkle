@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1763729701911,
+  "lastUpdate": 1763729703332,
   "repoUrl": "https://github.com/noir-lang/merkle",
   "entries": {
     "ACIR Opcodes": [
@@ -233,6 +233,55 @@ window.BENCHMARK_DATA = {
           {
             "name": "benchmark_unbalanced_merkle_tree_new",
             "value": 476,
+            "unit": "opcodes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "26174818+jialinli98@users.noreply.github.com",
+            "name": "Jialin Li",
+            "username": "jialinli98"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f56525a3d2dd871563cd1a93f14e39c196071e2e",
+          "message": "chore: add testing (#20)",
+          "timestamp": "2025-11-21T12:54:11Z",
+          "tree_id": "ff38c60de4759f2c4daef8d94a5eec3fcdecef84",
+          "url": "https://github.com/noir-lang/merkle/commit/f56525a3d2dd871563cd1a93f14e39c196071e2e"
+        },
+        "date": 1763729703315,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "benchmark_check_membership",
+            "value": 234,
+            "unit": "opcodes"
+          },
+          {
+            "name": "benchmark_get_sibling_path",
+            "value": 332,
+            "unit": "opcodes"
+          },
+          {
+            "name": "benchmark_root_from_sibling_path",
+            "value": 233,
+            "unit": "opcodes"
+          },
+          {
+            "name": "benchmark_unbalanced_merkle_tree_new",
+            "value": 476,
+            "unit": "opcodes"
+          },
+          {
+            "name": "test",
+            "value": 87,
             "unit": "opcodes"
           }
         ]
