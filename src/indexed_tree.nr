@@ -3,14 +3,14 @@ pub mod check_valid_low_leaf;
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
-use crate::utils::{check_permutation, create_tree_with_root};
+use crate::utils::create_tree_with_root;
+use dep::check_shuffle::{check_shuffle, get_shuffle_indices};
 use std::hash::Hasher;
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32, H>(
     start_root: Field,
     start_next_available_leaf_index: u64,
     values_to_insert: [Value; SubtreeWidth],
     sorted_values: [Value; SubtreeWidth],
-    sorted_values_indexes: [u32; SubtreeWidth],
     new_subtree_sibling_path: [Field; SiblingPathLength],
     low_leaf_preimages: [Leaf; SubtreeWidth],
     low_leaf_membership_witnesses: [MembershipWitness<TreeHeight>; SubtreeWidth],
@@ -23,7 +23,9 @@ where
     // A permutation to the values is provided to make the insertion use only one insertion strategy
     // However, for the actual insertion in the tree the original order is respected, the sorting is only used for validation of the links
     // and low leaf updates.
-    check_permutation(values_to_insert, sorted_values, sorted_values_indexes);
+
+    check_shuffle(values_to_insert, sorted_values);
+    let sorted_values_indexes = get_shuffle_indices(values_to_insert, sorted_values);
 
     // Now, update the existing leaves with the new leaves
     let mut current_tree_root = start_root;
