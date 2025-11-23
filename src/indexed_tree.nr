@@ -1,10 +1,11 @@
 pub mod check_valid_low_leaf;
 
+use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
-use crate::utils::{check_permutation, create_tree_with_root};
-use check_valid_low_leaf::assert_check_valid_low_leaf;
+use crate::utils::create_tree_with_root;
+use dep::check_shuffle::{check_shuffle, get_shuffle_indices};
 use std::hash::Hasher;
 
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SubtreeHeight: u32, let TreeHeight: u32, H>(
@@ -13,7 +14,6 @@ pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SubtreeHeight: u32, 
     values_to_insert: [Value; SubtreeWidth],
     sorted_values: [Value; SubtreeWidth],
     // sorted in DESCENDING order
-    sorted_values_indexes: [u32; SubtreeWidth],
     new_subtree_sibling_path: [Field; TreeHeight - SubtreeHeight],
     low_leaf_preimages: [Leaf; SubtreeWidth],
     low_leaf_membership_witnesses: [MembershipWitness<TreeHeight>; SubtreeWidth],
@@ -26,7 +26,10 @@ where
     // A permutation to the values is provided to make the insertion use only one insertion strategy
     // However, for the actual insertion in the tree the original order is respected, the sorting is only used for validation of the links
     // and low leaf updates.
-    check_permutation(values_to_insert, sorted_values, sorted_values_indexes);
+
+    assert_eq(SubtreeWidth, 1 << SubtreeHeight, "subtree items must be 2^subtree height");
+    check_shuffle(values_to_insert, sorted_values);
+    let sorted_values_indexes = get_shuffle_indices(values_to_insert, sorted_values);
 
     assert(
         start_next_available_leaf_index % SubtreeWidth == 0,
@@ -36,7 +39,6 @@ where
     // Now, update the existing leaves with the new leaves
     let mut current_tree_root = start_root;
     let mut insertion_subtree = [Leaf::empty(); SubtreeWidth];
-    let start_insertion_index = start_next_available_leaf_index;
 
     for i in 0..sorted_values.len() {
         let value = sorted_values[i];
@@ -47,12 +49,8 @@ where
             // validate the low leaf
             assert(!low_leaf_preimage.is_empty(), "Empty low leaf");
             let value_key = value.get_key();
-            let low_leaf_key = low_leaf_preimage.get_key();
-            let is_update = value_key == low_leaf_key;
 
-            if !is_update {
-                assert_check_valid_low_leaf(value_key, low_leaf_preimage);
-            }
+            assert_check_valid_low_leaf(value_key, low_leaf_preimage);
 
             // perform membership check for the low leaf against the original root
             assert_check_membership::<TreeHeight, H>(
@@ -65,14 +63,10 @@ where
             let value_index = sorted_values_indexes[i];
 
             // Calculate the new value of the low_leaf
-            let updated_low_leaf = if is_update {
-                low_leaf_preimage.update_value(value)
-            } else {
-                low_leaf_preimage.update_pointers(
-                    value_key,
-                    start_insertion_index as u32 + value_index,
-                )
-            };
+            let updated_low_leaf = low_leaf_preimage.update_pointers(
+                value_key,
+                start_next_available_leaf_index + value_index,
+            );
 
             current_tree_root = compute_root_from_sibling_path::<TreeHeight, H>(
                 updated_low_leaf.as_leaf(),
@@ -80,16 +74,12 @@ where
                 witness.sibling_path,
             );
 
-            insertion_subtree[value_index] = if is_update {
-                Leaf::empty()
-            } else {
-                Leaf::build_insertion_leaf(value, low_leaf_preimage)
-            };
+            insertion_subtree[value_index] = Leaf::build_insertion_leaf(value, low_leaf_preimage);
         }
     }
 
     let empty_subtree_root = calculate_empty_tree_root::<H>(SubtreeHeight);
-    let leaf_index_subtree_depth = start_insertion_index >> SubtreeHeight;
+    let leaf_index_subtree_depth = start_next_available_leaf_index >> SubtreeHeight;
 
     assert_check_membership::<TreeHeight - SubtreeHeight, H>(
         empty_subtree_root,
@@ -104,14 +94,14 @@ where
 
     // Calculate the new root
     // We are inserting a subtree rather than a full tree here
-    let subtree_index = start_insertion_index >> SubtreeHeight;
+    let subtree_index = start_next_available_leaf_index >> SubtreeHeight;
     let new_root = compute_root_from_sibling_path::<TreeHeight - SubtreeHeight, H>(
         subtree_root,
         subtree_index as Field,
         new_subtree_sibling_path,
     );
 
-    (new_root, start_insertion_index + values_to_insert.len())
+    (new_root, start_next_available_leaf_index + values_to_insert.len())
 }
 
 pub fn insert<Value, Leaf, let TreeHeight: u32, H>(

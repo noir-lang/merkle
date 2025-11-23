@@ -2,24 +2,6 @@ use crate::membership::{check_membership, MembershipWitness};
 use crate::merkle_tree::MerkleTree;
 use std::hash::Hasher;
 
-pub fn check_permutation<T, let N: u32>(
-    original_array: [T; N],
-    permuted_array: [T; N],
-    original_indexes: [u32; N],
-)
-where
-    T: Eq,
-{
-    let mut seen_value = [false; N];
-    for i in 0..N {
-        let index = original_indexes[i];
-        let original_value = original_array[index];
-        assert(permuted_array[i] == original_value, "Invalid index");
-        assert(!seen_value[index], "Duplicated index");
-        seen_value[index] = true;
-    }
-}
-
 pub fn poseidon2_hash(left: Field, right: Field) -> Field {
     poseidon::poseidon2::Poseidon2::hash([left, right], 2)
 }
