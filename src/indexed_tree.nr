@@ -55,7 +55,7 @@ where
             // perform membership check for the low leaf against the original root
             assert_check_membership::<TreeHeight, H>(
                 low_leaf_preimage.as_leaf(),
-                witness.leaf_index,
+                witness.node_index,
                 witness.sibling_path,
                 current_tree_root,
             );
@@ -74,7 +74,7 @@ where
 
             current_tree_root = compute_root_from_sibling_path::<TreeHeight, H>(
                 updated_low_leaf.as_leaf(),
-                witness.leaf_index,
+                witness.node_index,
                 witness.sibling_path,
             );
 
@@ -142,7 +142,7 @@ where
     // perform membership check for the low leaf against the original root
     assert_check_membership::<TreeHeight, H>(
         low_leaf_preimage.as_leaf(),
-        low_leaf_membership_witness.leaf_index,
+        low_leaf_membership_witness.node_index,
         low_leaf_membership_witness.sibling_path,
         current_root,
     );
@@ -157,7 +157,7 @@ where
     // Update low leaf
     current_root = compute_root_from_sibling_path::<TreeHeight, H>(
         updated_low_leaf.as_leaf(),
-        low_leaf_membership_witness.leaf_index,
+        low_leaf_membership_witness.node_index,
         low_leaf_membership_witness.sibling_path,
     );
 
