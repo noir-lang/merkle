@@ -185,3 +185,147 @@ where
         (current_root, next_available_leaf_index)
     }
 }
+
+mod tests {
+    use crate::{
+        indexed_tree::batch_insert,
+        leaf_preimage::{IndexedTreeLeafPreimage, LeafPreimage},
+        membership::MembershipWitness,
+        utils::{create_membership_witness, create_tree_with_root},
+    };
+    use poseidon::poseidon2::Poseidon2Hasher;
+    use std::hash::pedersen_hash;
+
+    struct TestLeafPreimage {
+        value: Field,
+        next_value: Field,
+    }
+
+    impl LeafPreimage for TestLeafPreimage {
+        fn get_key(self) -> Field {
+            self.value
+        }
+
+        fn as_leaf(self) -> Field {
+            pedersen_hash([self.value, self.next_value])
+        }
+    }
+
+    impl Eq for TestLeafPreimage {
+        fn eq(self, other: Self) -> bool {
+            (self.value == other.value) & (self.next_value == other.next_value)
+        }
+    }
+
+    impl IndexedTreeLeafPreimage<Field> for TestLeafPreimage {
+        fn get_next_key(self) -> Field {
+            self.next_value
+        }
+
+        fn points_to_infinity(self) -> bool {
+            (self.next_value == 0)
+        }
+
+        fn update_pointers(self, next_value: Field, _next_index: u32) -> Self {
+            Self { value: self.value, next_value }
+        }
+
+        fn update_value(self, value: Field) -> Self {
+            Self { value, next_value: self.next_value }
+        }
+
+        fn build_insertion_leaf(value: Field, low_leaf: Self) -> Self {
+            Self { value, next_value: low_leaf.next_value }
+        }
+
+        fn is_empty(self) -> bool {
+            (self.value == 0) & (self.next_value == 0)
+        }
+
+        fn empty() -> Self {
+            Self { value: 0, next_value: 0 }
+        }
+    }
+
+    #[test]
+    fn test_batch_insert() {
+        // Test inserting 4 values (25, 35, 45, 55)
+        // Initial tree has leaves: 10, 20, 30, 40
+        // tree leaves: [10, 20, 30, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        let initial_leaves_preimages = [
+            TestLeafPreimage { value: 10, next_value: 20 },
+            TestLeafPreimage { value: 20, next_value: 30 },
+            TestLeafPreimage { value: 30, next_value: 40 },
+            TestLeafPreimage { value: 40, next_value: 0 },
+        ];
+        let leaves_serialized =
+            initial_leaves_preimages.map(|leaf: TestLeafPreimage| leaf.as_leaf());
+        let remaining_leaves = [0; 12];
+        let initial_leaves: [Field; 16] = leaves_serialized.concat(remaining_leaves);
+        let (tree, start_root) = create_tree_with_root::<16, Poseidon2Hasher>(initial_leaves);
+
+        // Values to insert: 25, 35, 45, 55
+        let values_to_insert: [Field; 4] = [25, 26, 45, 55];
+        let sorted_values: [Field; 4] = [25, 26, 45, 55];
+        let sorted_values_indexes: [u32; 4] = [0, 1, 2, 3];
+
+        let preimage_20_30 = TestLeafPreimage { value: 20, next_value: 30 };
+        let preimage_40_0 = TestLeafPreimage { value: 40, next_value: 0 };
+
+        let low_leaf_preimages: [TestLeafPreimage; 4] = [
+            preimage_20_30, // 25 goes between 20 and 30
+            preimage_20_30, // 26 goes between 20 and 30
+            preimage_40_0, // 45 goes after 40
+            preimage_40_0, // 55 goes after 40
+        ];
+
+        let low_leaf_witnesses: [MembershipWitness<4>; 4] = [
+            create_membership_witness(tree, 1),
+            create_membership_witness(tree, 1),
+            create_membership_witness(tree, 3),
+            create_membership_witness(tree, 3),
+        ];
+
+        // get sibling path for subtree insertion at index 4
+        let subtree_index = 4;
+        let full_sibling_path = tree.get_sibling_path::<4>(subtree_index);
+        let new_subtree_sibling_path: [Field; 2] = [full_sibling_path[2], full_sibling_path[3]];
+
+        // insert at index 4
+        let (new_root, new_next_index) = batch_insert::<Field, TestLeafPreimage, 4, 2, 2, 4, Poseidon2Hasher>(
+            start_root,
+            4,
+            values_to_insert,
+            sorted_values,
+            sorted_values_indexes,
+            new_subtree_sibling_path,
+            low_leaf_preimages,
+            low_leaf_witnesses,
+        );
+
+        //expected tree leaves: [10, 20, 30, 40, 25, 26, 45, 55, 0, 0, 0, 0, 0, 0, 0, 0];
+        let initial_leaves_expected_preimages = [
+            TestLeafPreimage { value: 10, next_value: 20 },
+            TestLeafPreimage { value: 20, next_value: 25 },
+            TestLeafPreimage { value: 30, next_value: 40 },
+            TestLeafPreimage { value: 40, next_value: 45 },
+            TestLeafPreimage { value: 25, next_value: 26 },
+            TestLeafPreimage { value: 26, next_value: 30 },
+            TestLeafPreimage { value: 45, next_value: 55 },
+            TestLeafPreimage { value: 55, next_value: 0 },
+        ];
+
+        let leaves_expected_serialized =
+            initial_leaves_expected_preimages.map(|leaf: TestLeafPreimage| leaf.as_leaf());
+        let remaining_leaves_expected = [0; 8];
+        let initial_leaves_expected: [Field; 16] =
+            leaves_expected_serialized.concat(remaining_leaves_expected);
+        let (_, start_root_expected) =
+            create_tree_with_root::<16, Poseidon2Hasher>(initial_leaves_expected);
+        assert(new_root == start_root_expected, "New root should be the same as the expected root");
+
+        // verify next index is updated correctly
+        assert(new_next_index == 8, "Next available leaf index should be 8");
+    }
+
+}
