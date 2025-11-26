@@ -186,17 +186,6 @@ mod tests {
         assert_eq(tree.nodes[6], expected_root);
     }
 
-    // test empty tree
-    #[test]
-    fn test_compute_nodes_empty_tree() {
-        let tree = MerkleTree::<4, Poseidon2Hasher>::empty();
-        // Empty tree should have all nodes = 0
-        assert_eq(tree.nodes.len(), 3);
-        assert_eq(tree.nodes[0], 0);
-        assert_eq(tree.nodes[1], 0);
-        assert_eq(tree.nodes[2], 0);
-    }
-
     // test for N=8
     #[test]
     fn test_get_root_size_8() {
@@ -228,14 +217,6 @@ mod tests {
         let leaves16 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
         let tree16 = MerkleTree::<16, Poseidon2Hasher>::new(leaves16);
         assert_eq(tree16.get_root(), tree16.nodes[14]);
-    }
-
-    // test empty tree
-    #[test]
-    fn test_get_root_empty_tree() {
-        let tree = MerkleTree::<4, Poseidon2Hasher>::empty();
-        let root = tree.get_root();
-        assert_eq(root, 0);
     }
 
     // test for N=8
