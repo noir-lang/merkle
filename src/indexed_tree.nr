@@ -3,10 +3,27 @@ pub mod check_valid_low_leaf;
 use crate::indexed_tree::check_valid_low_leaf::assert_check_valid_low_leaf;
 use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
+use crate::merkle_tree::MerkleTree;
 use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
 use crate::utils::create_tree_with_root;
 use dep::check_shuffle::{check_shuffle, get_shuffle_indices};
 use std::hash::Hasher;
+
+// create a new indexed tree with no leaves, add leaf 0 as placeholder, return the root and the next available leaf index.
+// Then once a new leaf is inserted, the placeholder is updated to point to the new leaf.
+pub fn new<Value, Leaf, let TreeHeight: u32, let TreeWidth: u32, H>() -> (Field, u32)
+where
+    Value: IndexedTreeLeafValue,
+    Leaf: IndexedTreeLeafPreimage<Value>,
+    H: Hasher + Default,
+{
+    assert_eq(TreeWidth, 1 << TreeHeight, "subtree items must be 2^subtree height");
+    let leaf_0 = Leaf::empty().as_leaf();
+    let tree = MerkleTree::<TreeWidth, H>::empty();
+    let sibling_path = tree.get_sibling_path::<TreeHeight>(0);
+    let root = compute_root_from_sibling_path::<TreeHeight, H>(leaf_0, 0, sibling_path);
+    (root, 1)
+}
 
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SubtreeHeight: u32, let TreeHeight: u32, H>(
     start_root: Field,
@@ -106,74 +123,25 @@ where
 
 pub fn insert<Value, Leaf, let TreeHeight: u32, H>(
     mut current_root: Field,
-    mut next_available_leaf_index: u64,
+    mut next_available_leaf_index: u32,
     value: Value,
     low_leaf_preimage: Leaf,
     low_leaf_membership_witness: MembershipWitness<TreeHeight>,
     insertion_sibling_path: [Field; TreeHeight],
-) -> (Field, u64)
+) -> (Field, u32)
 where
     Value: IndexedTreeLeafValue,
     Leaf: IndexedTreeLeafPreimage<Value>,
     H: Hasher + Default,
 {
-    // validate the low leaf
-    assert(!low_leaf_preimage.is_empty(), "Empty low leaf");
-    let value_key = value.get_key();
-    let low_leaf_key = low_leaf_preimage.get_key();
-    let low_leaf_next_key = low_leaf_preimage.get_next_key();
-    let is_update = value_key == low_leaf_key;
-
-    let is_less_than_slot = low_leaf_key.lt(value_key);
-    let is_next_greater_than = value_key.lt(low_leaf_next_key);
-    let is_in_range =
-        is_less_than_slot & (is_next_greater_than | low_leaf_preimage.points_to_infinity());
-
-    assert(is_update | is_in_range, "Invalid low leaf");
-
-    // perform membership check for the low leaf against the original root
-    assert_check_membership::<TreeHeight, H>(
-        low_leaf_preimage.as_leaf(),
-        low_leaf_membership_witness.leaf_index,
-        low_leaf_membership_witness.sibling_path,
+    batch_insert::<Value, Leaf, 1, 0, TreeHeight, H>(
         current_root,
-    );
-
-    // Calculate the new value of the low_leaf
-    let updated_low_leaf = if is_update {
-        low_leaf_preimage.update_value(value)
-    } else {
-        low_leaf_preimage.update_pointers(value_key, next_available_leaf_index as u32)
-    };
-
-    // Update low leaf
-    current_root = compute_root_from_sibling_path::<TreeHeight, H>(
-        updated_low_leaf.as_leaf(),
-        low_leaf_membership_witness.leaf_index,
-        low_leaf_membership_witness.sibling_path,
-    );
-
-    if is_update {
-        // If it's an update, we don't need to insert the new leaf and advance the tree
-        (current_root, next_available_leaf_index)
-    } else {
-        let insertion_leaf = Leaf::build_insertion_leaf(value, low_leaf_preimage);
-        assert_check_membership::<TreeHeight, H>(
-            0,
-            next_available_leaf_index as Field,
-            insertion_sibling_path,
-            current_root,
-        );
-
-        // Calculate the new root
-        current_root = compute_root_from_sibling_path::<TreeHeight, H>(
-            insertion_leaf.as_leaf(),
-            next_available_leaf_index as Field,
-            insertion_sibling_path,
-        );
-
-        next_available_leaf_index += 1;
-
-        (current_root, next_available_leaf_index)
-    }
+        next_available_leaf_index,
+        [value],
+        [value],
+        // sorted in DESCENDING order
+        insertion_sibling_path,
+        [low_leaf_preimage],
+        [low_leaf_membership_witness],
+    )
 }

@@ -9,8 +9,13 @@ pub struct MerkleTree<let N: u32, H> {
 }
 
 impl<let N: u32, H> MerkleTree<N, H> {
-    pub fn empty() -> Self {
-        MerkleTree { leaves: [0; N], nodes: [0; N - 1] }
+    pub fn empty() -> Self
+    where
+        H: Hasher + Default,
+    {
+        let leaves = [0; N];
+        let nodes = Self::compute_merkle_tree_nodes(leaves);
+        MerkleTree { leaves, nodes }
     }
 
     pub fn new(leaves: [Field; N]) -> Self
@@ -31,6 +36,41 @@ impl<let N: u32, H> MerkleTree<N, H> {
             index + 1
         } else {
             index - 1
+        }
+    }
+
+    pub fn update_leaf<let K: u32>(
+        &mut self,
+        leaf_index: u32,
+        leaf: Field,
+        sibling_path: [Field; K],
+    )
+    where
+        H: Hasher + Default,
+    {
+        assert_eq(2.pow_32(K as Field), N as Field, "Invalid path length");
+        self.leaves[leaf_index] = leaf;
+        let mut current_value = leaf;
+        let mut position = leaf_index;
+        let mut level_offset: u32 = 0;
+        let mut level_width = N / 2;
+        let mut node_index_in_level = leaf_index / 2;
+
+        for level in 0..K {
+            let sibling = sibling_path[level];
+            let (left, right) = if position % 2 == 1 {
+                (sibling, current_value)
+            } else {
+                (current_value, sibling)
+            };
+            current_value = hash_nodes::<H>(left, right);
+
+            self.nodes[level_offset + node_index_in_level] = current_value;
+
+            position /= 2;
+            level_offset += level_width;
+            level_width /= 2;
+            node_index_in_level /= 2;
         }
     }
 
@@ -292,17 +332,51 @@ mod tests {
         }
     }
 
-    #[export]
-    fn test(leaves: [Field; 4]) -> Field {
-        let mut level0_hash = 0;
-        for i in 0..4 {
-            level0_hash = if i % 2 == 0 {
-                leaves[i] * 10
-            } else {
-                leaves[i + 1] * 11
-            };
+    #[test]
+    fn test_simple_update_leaf() {
+        let mut tree = MerkleTree::<4, Poseidon2Hasher>::empty();
+        tree.update_leaf::<1>(0, 1, [0]);
+        assert_eq(tree.get_root(), poseidon2_hash(1, 0));
+    }
+
+    fn helper_assert_tree_equals<let N: u32>(
+        tree: MerkleTree<N, Poseidon2Hasher>,
+        expected_tree: MerkleTree<N, Poseidon2Hasher>,
+    ) {
+        for i in 0..N {
+            assert_eq(tree.leaves[i], expected_tree.leaves[i]);
         }
-        level0_hash
+        for i in 0..N - 1 {
+            assert_eq(tree.nodes[i], expected_tree.nodes[i]);
+        }
+    }
+
+    #[test]
+    fn test_update_leaf_height_2() {
+        let mut leaves = [1, 2, 3, 4];
+        let mut tree = MerkleTree::<4, Poseidon2Hasher>::new(leaves);
+        let new_leaf = 42;
+        for i in 0..4 {
+            let sibling_path = tree.get_sibling_path::<2>(i);
+            leaves[i] = new_leaf;
+            tree.update_leaf::<2>(i, new_leaf, sibling_path);
+            let expected_tree = MerkleTree::<4, Poseidon2Hasher>::new(leaves);
+            helper_assert_tree_equals(tree, expected_tree);
+        }
+    }
+
+    #[test]
+    fn test_update_leaf_height_3() {
+        let mut leaves = [1, 2, 3, 4, 5, 6, 7, 8];
+        let mut tree = MerkleTree::<8, Poseidon2Hasher>::new(leaves);
+        let new_leaf = 777;
+        for i in 0..8 {
+            let sibling_path = tree.get_sibling_path::<3>(i);
+            leaves[i] = new_leaf;
+            tree.update_leaf::<3>(i, new_leaf, sibling_path);
+            let expected_tree = MerkleTree::<8, Poseidon2Hasher>::new(leaves);
+            helper_assert_tree_equals(tree, expected_tree);
+        }
     }
 
 }
