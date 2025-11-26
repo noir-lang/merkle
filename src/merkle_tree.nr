@@ -334,7 +334,7 @@ mod tests {
 
     #[test]
     fn test_simple_update_leaf() {
-        let mut tree = MerkleTree::<4, Poseidon2Hasher>::empty();
+        let mut tree = MerkleTree::<2, Poseidon2Hasher>::empty();
         tree.update_leaf::<1>(0, 1, [0]);
         assert_eq(tree.get_root(), poseidon2_hash(1, 0));
     }
