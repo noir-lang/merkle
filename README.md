@@ -158,7 +158,7 @@ Common hashers:
 
 ## Noir Version Compatibility
 
-Tested with Noir version 1.0.0-beta.11 or up
+Tested with Noir version 1.0.0-beta.20 or up
 
 ## Benchmarks
 

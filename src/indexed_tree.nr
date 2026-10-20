@@ -4,7 +4,7 @@ use crate::leaf_preimage::{IndexedTreeLeafPreimage, IndexedTreeLeafValue};
 use crate::membership::{assert_check_membership, MembershipWitness};
 use crate::root::{calculate_empty_tree_root, compute_root_from_sibling_path};
 use crate::utils::create_tree_with_root;
-use dep::check_shuffle::{check_shuffle, get_shuffle_indices};
+use check_shuffle::{check_shuffle, get_shuffle_indices};
 use std::hash::Hasher;
 pub fn batch_insert<Value, Leaf, let SubtreeWidth: u32, let SiblingPathLength: u32, let SubtreeHeight: u32, let TreeHeight: u32, H>(
     start_root: Field,
