@@ -11,7 +11,10 @@ where
     let next_key = low_leaf_preimage.get_next_key();
 
     assert(low_key.lt(key), "Key is not greater than the low leaf");
-    assert(key.lt(next_key) | (next_key == 0), "Key is not less than the next leaf");
+    assert(
+        key.lt(next_key) | low_leaf_preimage.points_to_infinity(),
+        "Key is not less than the next leaf",
+    );
 }
 
 mod tests {
