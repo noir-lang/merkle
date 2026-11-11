@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794402971155,
+  "lastUpdate": 1794402974127,
   "repoUrl": "https://github.com/noir-lang/merkle",
   "entries": {
     "ACIR Opcodes": [
@@ -370,6 +370,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "test",
             "value": 87,
+            "unit": "opcodes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "mike@aztec.foundation",
+            "name": "Michael Connor",
+            "username": "iAmMichaelConnor"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d86f765cce47d200595deb627bbbf5fd5b4e685f",
+          "message": "chore: test with Noir 1.0.0 and bb 6.0.0 (#29)",
+          "timestamp": "2026-11-11T13:15:43Z",
+          "tree_id": "10c02600b57595b81d3ccb090f39bad42a7573ae",
+          "url": "https://github.com/noir-lang/merkle/commit/d86f765cce47d200595deb627bbbf5fd5b4e685f"
+        },
+        "date": 1794402974113,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "benchmark_check_membership",
+            "value": 116,
+            "unit": "opcodes"
+          },
+          {
+            "name": "benchmark_get_sibling_path",
+            "value": 160,
+            "unit": "opcodes"
+          },
+          {
+            "name": "benchmark_root_from_sibling_path",
+            "value": 115,
+            "unit": "opcodes"
+          },
+          {
+            "name": "benchmark_unbalanced_merkle_tree_new",
+            "value": 426,
             "unit": "opcodes"
           }
         ]
